@@ -198,6 +198,20 @@ class DocumentStore:
 
         return documents
 
+    def get_existing_urls(self, source: DocumentSource) -> set[str]:
+        """Get all existing document URLs for a source (for fast duplicate checking).
+
+        Args:
+            source: Document source to filter by.
+
+        Returns:
+            Set of document URLs.
+        """
+        rows = self.db["documents"].rows_where(
+            "source = ?", [source.value], select="url"
+        )
+        return {row["url"] for row in rows}
+
     def save_progress(self, progress: ScrapingProgress) -> None:
         """Save or update scraping progress.
 

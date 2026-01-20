@@ -37,36 +37,44 @@ from utils.logger import setup_root_logger, get_logger
 logger = get_logger(__name__)
 
 
-def get_scraper(source: str, store: DocumentStore, target: int | None = None):
+def get_scraper(
+    source: str,
+    store: DocumentStore,
+    target: int | None = None,
+    use_api: bool | None = None,
+):
     """Get scraper instance for a source.
 
     Args:
         source: Source name.
         store: Document store instance.
         target: Optional target count override.
+        use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
 
     Returns:
         Scraper instance.
     """
-    scrapers = {
-        "indian_kanoon": IndianKanoonScraper,
-        "supreme_court": SupremeCourtScraper,
-        "high_courts": HighCourtsScraper,
-        "india_code": IndiaCodeScraper,
-    }
+    if source not in ["indian_kanoon", "supreme_court", "high_courts", "india_code"]:
+        raise ValueError(f"Unknown source: {source}. Available: indian_kanoon, supreme_court, high_courts, india_code")
 
-    if source not in scrapers:
-        raise ValueError(f"Unknown source: {source}. Available: {list(scrapers.keys())}")
+    # Indian Kanoon based scrapers support use_api parameter
+    if source == "indian_kanoon":
+        return IndianKanoonScraper(store=store, target_count=target, use_api=use_api)
+    elif source == "supreme_court":
+        return SupremeCourtScraper(store=store, target_count=target, use_api=use_api)
+    elif source == "high_courts":
+        return HighCourtsScraper(store=store, target_count=target, use_api=use_api)
+    elif source == "india_code":
+        return IndiaCodeScraper(store=store, target_count=target)
 
-    return scrapers[source](store=store, target_count=target)
 
-
-def run_dry_run(sources: list[str], count: int = 10) -> None:
+def run_dry_run(sources: list[str], count: int = 10, use_api: bool | None = None) -> None:
     """Run a dry run to test scrapers.
 
     Args:
         sources: List of sources to test.
         count: Number of documents to fetch per source.
+        use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
     """
     logger.info(f"Starting dry run: {count} documents per source")
     store = DocumentStore()
@@ -77,7 +85,7 @@ def run_dry_run(sources: list[str], count: int = 10) -> None:
         logger.info(f"{'='*50}")
 
         try:
-            scraper = get_scraper(source, store)
+            scraper = get_scraper(source, store, use_api=use_api)
             docs = scraper.dry_run(count=count)
 
             logger.info(f"\nResults for {source}:")
@@ -99,6 +107,7 @@ def run_collection(
     sources: list[str],
     targets: dict[str, int] | None = None,
     resume: bool = True,
+    use_api: bool | None = None,
 ) -> dict[str, int]:
     """Run data collection.
 
@@ -106,6 +115,7 @@ def run_collection(
         sources: List of sources to collect from.
         targets: Optional dict of source -> target count.
         resume: Whether to resume from previous progress.
+        use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
 
     Returns:
         Dict of source -> documents collected.
@@ -123,7 +133,7 @@ def run_collection(
 
         try:
             target = targets.get(source) if targets else None
-            scraper = get_scraper(source, store, target)
+            scraper = get_scraper(source, store, target, use_api=use_api)
             count = scraper.scrape(resume=resume)
             results[source] = count
 
@@ -214,6 +224,13 @@ Examples:
         help="Show collection statistics and exit",
     )
 
+    parser.add_argument(
+        "--mode",
+        choices=["api", "html", "auto"],
+        default="auto",
+        help="Crawling mode for Indian Kanoon scrapers: api, html, or auto (default: auto)",
+    )
+
     args = parser.parse_args()
 
     # Setup logging
@@ -239,9 +256,16 @@ Examples:
             print(f"    {court}: {count}")
         return
 
+    # Determine use_api from mode
+    use_api = None  # auto
+    if args.mode == "api":
+        use_api = True
+    elif args.mode == "html":
+        use_api = False
+
     # Dry run
     if args.dry_run:
-        run_dry_run(sources, args.dry_run_count)
+        run_dry_run(sources, args.dry_run_count, use_api=use_api)
         return
 
     # Full collection
@@ -252,7 +276,7 @@ Examples:
         targets = {s: per_source for s in sources}
 
     resume = not args.no_resume
-    run_collection(sources, targets, resume)
+    run_collection(sources, targets, resume, use_api=use_api)
 
 
 if __name__ == "__main__":
