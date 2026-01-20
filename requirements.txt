@@ -1,0 +1,32 @@
+# HTTP & Web Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+fake-useragent>=1.4.0
+
+# Data Validation
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Database
+sqlite-utils>=3.35.0
+
+# Retry & Rate Limiting
+tenacity>=8.2.0
+
+# Progress & CLI
+tqdm>=4.66.0
+
+# Date Parsing
+python-dateutil>=2.8.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Development
+black>=23.0.0
+ruff>=0.1.0
