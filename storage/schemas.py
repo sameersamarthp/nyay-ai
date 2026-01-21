@@ -26,6 +26,7 @@ class LegalDocument(BaseModel):
     doc_id: str = ""  # Generated from citation+court+date if not provided
     source: DocumentSource
     url: str
+    cnr: str | None = None  # eCourts unique Case Number Record (e.g., DLHC010012342023)
 
     # Case Information
     citation: str | None = None  # e.g., "2023 SCC 456", "AIR 2022 SC 1234"
@@ -39,6 +40,7 @@ class LegalDocument(BaseModel):
 
     # Bench
     judges: list[str] = Field(default_factory=list)
+    author_judge: str | None = None  # Judge who authored the judgment (distinct from full bench)
 
     # Dates
     date_decided: date | None = None
@@ -59,6 +61,7 @@ class LegalDocument(BaseModel):
     # Metadata
     scraped_at: datetime = Field(default_factory=datetime.now)
     is_landmark: bool = False
+    available_languages: list[str] = Field(default_factory=list)  # e.g., ["en", "hi", "kn"]
 
     @computed_field
     @property
@@ -70,8 +73,12 @@ class LegalDocument(BaseModel):
     def generate_doc_id(self) -> Self:
         """Generate doc_id if not provided."""
         if not self.doc_id:
-            # Create unique ID from key fields
-            id_string = f"{self.citation or ''}{self.court}{self.date_decided or ''}{self.case_title}"
+            # Prefer CNR as it's the official eCourts unique identifier
+            if self.cnr:
+                id_string = self.cnr
+            else:
+                # Fallback to hash of key fields
+                id_string = f"{self.citation or ''}{self.court}{self.date_decided or ''}{self.case_title}"
             self.doc_id = sha256(id_string.encode()).hexdigest()[:16]
         return self
 
