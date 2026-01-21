@@ -27,6 +27,7 @@ class SupremeCourtScraper(IndianKanoonScraper):
         target_count: int | None = None,
         api_token: str | None = None,
         use_api: bool | None = None,
+        num_threads: int = 1,
     ):
         """Initialize Supreme Court scraper.
 
@@ -35,6 +36,7 @@ class SupremeCourtScraper(IndianKanoonScraper):
             target_count: Number of documents to collect.
             api_token: Indian Kanoon API token (if available).
             use_api: Force API (True), force HTML (False), or auto-detect (None).
+            num_threads: Number of concurrent threads for fetching (default: 1).
         """
         super().__init__(
             store=store,
@@ -42,6 +44,7 @@ class SupremeCourtScraper(IndianKanoonScraper):
             api_token=api_token,
             court_filter="supremecourt",
             use_api=use_api,
+            num_threads=num_threads,
         )
         logger.info("Supreme Court scraper initialized (via Indian Kanoon)")
 

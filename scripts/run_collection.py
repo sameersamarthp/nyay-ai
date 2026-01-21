@@ -42,6 +42,7 @@ def get_scraper(
     store: DocumentStore,
     target: int | None = None,
     use_api: bool | None = None,
+    num_threads: int = 1,
 ):
     """Get scraper instance for a source.
 
@@ -50,6 +51,7 @@ def get_scraper(
         store: Document store instance.
         target: Optional target count override.
         use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
+        num_threads: Number of concurrent threads for fetching.
 
     Returns:
         Scraper instance.
@@ -59,24 +61,30 @@ def get_scraper(
 
     # Indian Kanoon based scrapers support use_api parameter
     if source == "indian_kanoon":
-        return IndianKanoonScraper(store=store, target_count=target, use_api=use_api)
+        return IndianKanoonScraper(store=store, target_count=target, use_api=use_api, num_threads=num_threads)
     elif source == "supreme_court":
-        return SupremeCourtScraper(store=store, target_count=target, use_api=use_api)
+        return SupremeCourtScraper(store=store, target_count=target, use_api=use_api, num_threads=num_threads)
     elif source == "high_courts":
-        return HighCourtsScraper(store=store, target_count=target, use_api=use_api)
+        return HighCourtsScraper(store=store, target_count=target, use_api=use_api, num_threads=num_threads)
     elif source == "india_code":
-        return IndiaCodeScraper(store=store, target_count=target)
+        return IndiaCodeScraper(store=store, target_count=target, num_threads=num_threads)
 
 
-def run_dry_run(sources: list[str], count: int = 10, use_api: bool | None = None) -> None:
+def run_dry_run(
+    sources: list[str],
+    count: int = 10,
+    use_api: bool | None = None,
+    num_threads: int = 1,
+) -> None:
     """Run a dry run to test scrapers.
 
     Args:
         sources: List of sources to test.
         count: Number of documents to fetch per source.
         use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
+        num_threads: Number of concurrent threads for fetching.
     """
-    logger.info(f"Starting dry run: {count} documents per source")
+    logger.info(f"Starting dry run: {count} documents per source (threads: {num_threads})")
     store = DocumentStore()
 
     for source in sources:
@@ -85,7 +93,7 @@ def run_dry_run(sources: list[str], count: int = 10, use_api: bool | None = None
         logger.info(f"{'='*50}")
 
         try:
-            scraper = get_scraper(source, store, use_api=use_api)
+            scraper = get_scraper(source, store, use_api=use_api, num_threads=num_threads)
             docs = scraper.dry_run(count=count)
 
             logger.info(f"\nResults for {source}:")
@@ -108,6 +116,7 @@ def run_collection(
     targets: dict[str, int] | None = None,
     resume: bool = True,
     use_api: bool | None = None,
+    num_threads: int = 1,
 ) -> dict[str, int]:
     """Run data collection.
 
@@ -116,11 +125,12 @@ def run_collection(
         targets: Optional dict of source -> target count.
         resume: Whether to resume from previous progress.
         use_api: For Indian Kanoon scrapers - True for API, False for HTML, None for auto.
+        num_threads: Number of concurrent threads for fetching.
 
     Returns:
         Dict of source -> documents collected.
     """
-    logger.info("Starting data collection")
+    logger.info(f"Starting data collection (threads: {num_threads})")
     settings.ensure_directories()
 
     store = DocumentStore()
@@ -133,7 +143,7 @@ def run_collection(
 
         try:
             target = targets.get(source) if targets else None
-            scraper = get_scraper(source, store, target, use_api=use_api)
+            scraper = get_scraper(source, store, target, use_api=use_api, num_threads=num_threads)
             count = scraper.scrape(resume=resume)
             results[source] = count
 
@@ -231,6 +241,13 @@ Examples:
         help="Crawling mode for Indian Kanoon scrapers: api, html, or auto (default: auto)",
     )
 
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="Number of concurrent threads for fetching (default: 1)",
+    )
+
     args = parser.parse_args()
 
     # Setup logging
@@ -265,7 +282,7 @@ Examples:
 
     # Dry run
     if args.dry_run:
-        run_dry_run(sources, args.dry_run_count, use_api=use_api)
+        run_dry_run(sources, args.dry_run_count, use_api=use_api, num_threads=args.threads)
         return
 
     # Full collection
@@ -276,7 +293,7 @@ Examples:
         targets = {s: per_source for s in sources}
 
     resume = not args.no_resume
-    run_collection(sources, targets, resume, use_api=use_api)
+    run_collection(sources, targets, resume, use_api=use_api, num_threads=args.threads)
 
 
 if __name__ == "__main__":

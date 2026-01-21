@@ -39,6 +39,7 @@ class HighCourtsScraper(IndianKanoonScraper):
         api_token: str | None = None,
         courts: list[str] | None = None,
         use_api: bool | None = None,
+        num_threads: int = 1,
     ):
         """Initialize High Courts scraper.
 
@@ -49,6 +50,7 @@ class HighCourtsScraper(IndianKanoonScraper):
             courts: List of court codes to scrape (e.g., ["delhi", "bombay"]).
                    Defaults to settings.HIGH_COURTS.
             use_api: Force API (True), force HTML (False), or auto-detect (None).
+            num_threads: Number of concurrent threads for fetching (default: 1).
         """
         super().__init__(
             store=store,
@@ -56,6 +58,7 @@ class HighCourtsScraper(IndianKanoonScraper):
             api_token=api_token,
             court_filter="highcourts",
             use_api=use_api,
+            num_threads=num_threads,
         )
 
         # Courts to scrape

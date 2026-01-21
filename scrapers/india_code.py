@@ -42,14 +42,16 @@ class IndiaCodeScraper(BaseScraper):
         self,
         store: DocumentStore | None = None,
         target_count: int | None = None,
+        num_threads: int = 1,
     ):
         """Initialize India Code scraper.
 
         Args:
             store: Document store instance.
             target_count: Number of acts to collect.
+            num_threads: Number of concurrent threads for fetching (default: 1).
         """
-        super().__init__(store, target_count or settings.TARGET_INDIA_CODE)
+        super().__init__(store, target_count or settings.TARGET_INDIA_CODE, num_threads)
         self.base_url = settings.INDIA_CODE_BASE_URL
 
         logger.info("India Code scraper initialized")
