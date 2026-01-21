@@ -2,9 +2,11 @@
 Document storage using SQLite + JSON files.
 
 SQLite for metadata and fast queries, JSON for full document content.
+Thread-safe for concurrent access.
 """
 
 import json
+import threading
 from pathlib import Path
 from sqlite_utils import Database
 
@@ -33,6 +35,9 @@ class DocumentStore:
         # Initialize database
         self.db = Database(self.db_path)
         self._init_tables()
+
+        # Lock for thread-safe operations
+        self._lock = threading.Lock()
 
     def _init_tables(self) -> None:
         """Create database tables if they don't exist."""
@@ -83,7 +88,7 @@ class DocumentStore:
             logger.info("Created scraping_progress table")
 
     def save_document(self, doc: LegalDocument) -> bool:
-        """Save a legal document to storage.
+        """Save a legal document to storage (thread-safe).
 
         Args:
             doc: LegalDocument to save.
@@ -91,40 +96,41 @@ class DocumentStore:
         Returns:
             True if saved successfully, False if duplicate.
         """
-        # Check for existing document
-        if self.document_exists(doc.doc_id):
-            logger.debug(f"Document {doc.doc_id} already exists, skipping")
-            return False
+        with self._lock:
+            # Check for existing document
+            if self.document_exists(doc.doc_id):
+                logger.debug(f"Document {doc.doc_id} already exists, skipping")
+                return False
 
-        # Save full document as JSON
-        json_path = self._get_json_path(doc)
-        json_path.parent.mkdir(parents=True, exist_ok=True)
+            # Save full document as JSON
+            json_path = self._get_json_path(doc)
+            json_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(doc.to_dict(), f, ensure_ascii=False, indent=2)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(doc.to_dict(), f, ensure_ascii=False, indent=2)
 
-        # Save metadata to SQLite
-        metadata = {
-            "doc_id": doc.doc_id,
-            "source": doc.source.value,
-            "url": doc.url,
-            "citation": doc.citation,
-            "case_number": doc.case_number,
-            "case_title": doc.case_title,
-            "court": doc.court,
-            "petitioner": doc.petitioner,
-            "respondent": doc.respondent,
-            "date_decided": doc.date_decided.isoformat() if doc.date_decided else None,
-            "subject_category": doc.subject_category,
-            "outcome": doc.outcome,
-            "word_count": doc.word_count,
-            "scraped_at": doc.scraped_at.isoformat(),
-            "is_landmark": int(doc.is_landmark),
-            "json_path": str(json_path.relative_to(settings.PROJECT_ROOT)),
-        }
-        self.db["documents"].insert(metadata)
-        logger.debug(f"Saved document: {doc.doc_id}")
-        return True
+            # Save metadata to SQLite
+            metadata = {
+                "doc_id": doc.doc_id,
+                "source": doc.source.value,
+                "url": doc.url,
+                "citation": doc.citation,
+                "case_number": doc.case_number,
+                "case_title": doc.case_title,
+                "court": doc.court,
+                "petitioner": doc.petitioner,
+                "respondent": doc.respondent,
+                "date_decided": doc.date_decided.isoformat() if doc.date_decided else None,
+                "subject_category": doc.subject_category,
+                "outcome": doc.outcome,
+                "word_count": doc.word_count,
+                "scraped_at": doc.scraped_at.isoformat(),
+                "is_landmark": int(doc.is_landmark),
+                "json_path": str(json_path.relative_to(settings.PROJECT_ROOT)),
+            }
+            self.db["documents"].insert(metadata)
+            logger.debug(f"Saved document: {doc.doc_id}")
+            return True
 
     def _get_json_path(self, doc: LegalDocument) -> Path:
         """Get JSON file path for a document."""
@@ -213,16 +219,17 @@ class DocumentStore:
         return {row["url"] for row in rows}
 
     def save_progress(self, progress: ScrapingProgress) -> None:
-        """Save or update scraping progress.
+        """Save or update scraping progress (thread-safe).
 
         Args:
             progress: ScrapingProgress to save.
         """
-        self.db["scraping_progress"].upsert(
-            progress.to_dict(),
-            pk="source",
-        )
-        logger.debug(f"Saved progress for {progress.source.value}: {progress.documents_collected} docs")
+        with self._lock:
+            self.db["scraping_progress"].upsert(
+                progress.to_dict(),
+                pk="source",
+            )
+            logger.debug(f"Saved progress for {progress.source.value}: {progress.documents_collected} docs")
 
     def get_progress(self, source: DocumentSource) -> ScrapingProgress | None:
         """Get scraping progress for a source.

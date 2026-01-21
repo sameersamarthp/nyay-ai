@@ -8,10 +8,14 @@ API documentation: https://api.indiankanoon.org/
 
 OPTIMIZED: Uses POST for both search and document fetch via API.
 This avoids rate limiting issues with HTML scraping.
+Supports concurrent fetching with multiple threads.
 """
 
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
+from queue import Queue, Empty
 from typing import Generator
 from urllib.parse import urljoin, urlencode
 
@@ -41,6 +45,7 @@ class IndianKanoonScraper(BaseScraper):
         api_token: str | None = None,
         court_filter: str | None = None,
         use_api: bool | None = None,
+        num_threads: int = 1,
     ):
         """Initialize Indian Kanoon scraper.
 
@@ -50,6 +55,7 @@ class IndianKanoonScraper(BaseScraper):
             api_token: Indian Kanoon API token (if available).
             court_filter: Filter for specific court (e.g., "supremecourt").
             use_api: Force API (True), force HTML (False), or auto-detect (None).
+            num_threads: Number of concurrent threads for fetching (default: 1).
         """
         # Set attributes before super().__init__() since _get_headers needs them
         self.api_token = api_token or settings.INDIAN_KANOON_API_TOKEN
@@ -64,7 +70,7 @@ class IndianKanoonScraper(BaseScraper):
         else:
             self.use_api = use_api
 
-        super().__init__(store, target_count)
+        super().__init__(store, target_count, num_threads)
 
         if self.use_api:
             if self.api_token:
@@ -349,11 +355,32 @@ class IndianKanoonScraper(BaseScraper):
                     logger.error(f"API search failed for '{query}' at page {page}: {e}")
                     break
 
+    def _process_doc_id(self, doc_id: str) -> tuple[str, LegalDocument | None]:
+        """Process a single document ID and return the document (thread-safe).
+
+        Args:
+            doc_id: Document ID to process.
+
+        Returns:
+            Tuple of (url, LegalDocument) if successful, (url, None) otherwise.
+        """
+        url = f"{self.base_url}/doc/{doc_id}/"
+        try:
+            doc_data = self._fetch_doc_via_api(doc_id)
+            if not doc_data:
+                return url, None
+            doc = self._parse_api_document(doc_data)
+            return url, doc
+        except Exception as e:
+            logger.error(f"Error processing doc {doc_id}: {e}")
+            return url, None
+
     def scrape_via_api(self, resume: bool = True) -> int:
         """Optimized scrape using API for both search and document fetch.
 
         This method uses POST requests for both operations, which is more
         reliable and less likely to be rate limited.
+        Supports concurrent fetching with multiple threads.
 
         Args:
             resume: Whether to resume from previous progress.
@@ -363,7 +390,7 @@ class IndianKanoonScraper(BaseScraper):
         """
         if not self.api_token:
             logger.warning("No API token, falling back to HTML scraping")
-            return self.scrape(resume)
+            return super().scrape(resume)
 
         # Load or create progress
         progress = None
@@ -384,6 +411,7 @@ class IndianKanoonScraper(BaseScraper):
         logger.info(
             f"Starting {self.source.value} API scraper: "
             f"{collected}/{self.target_count} collected"
+            f" (threads: {self.num_threads})"
         )
 
         # Progress bar
@@ -397,7 +425,48 @@ class IndianKanoonScraper(BaseScraper):
         # Pre-load existing doc URLs for fast duplicate checking
         logger.info("Loading existing document URLs for duplicate detection...")
         existing_urls = self.store.get_existing_urls(self.source)
+        existing_urls_lock = threading.Lock()
         logger.info(f"Found {len(existing_urls)} existing documents")
+        skipped_duplicates = 0
+
+        if self.num_threads <= 1:
+            # Sequential processing
+            collected, skipped_duplicates = self._scrape_api_sequential(
+                progress, collected, pbar, existing_urls
+            )
+        else:
+            # Concurrent processing
+            collected, skipped_duplicates = self._scrape_api_concurrent(
+                progress, collected, pbar, existing_urls, existing_urls_lock
+            )
+
+        pbar.close()
+
+        # Save final progress
+        progress.documents_collected = collected
+        progress.last_updated = datetime.now()
+        progress.is_complete = collected >= self.target_count
+        self.store.save_progress(progress)
+
+        logger.info(
+            f"{self.source.value}: Collected {collected}/{self.target_count} documents"
+            f" (skipped {skipped_duplicates} duplicates)"
+        )
+
+        return collected
+
+    def _scrape_api_sequential(
+        self,
+        progress: ScrapingProgress,
+        collected: int,
+        pbar: tqdm,
+        existing_urls: set[str],
+    ) -> tuple[int, int]:
+        """Sequential API scraping.
+
+        Returns:
+            Tuple of (collected count, skipped duplicates count).
+        """
         skipped_duplicates = 0
 
         try:
@@ -417,54 +486,139 @@ class IndianKanoonScraper(BaseScraper):
                         logger.info(f"Skipped {skipped_duplicates} duplicates so far...")
                     continue
 
-                try:
-                    # Fetch document via API (POST)
-                    doc_data = self._fetch_doc_via_api(doc_id)
+                url, doc = self._process_doc_id(doc_id)
 
-                    if not doc_data:
-                        logger.debug(f"Failed to fetch doc {doc_id}")
-                        continue
+                if doc:
+                    if self.store.save_document(doc):
+                        collected += 1
+                        existing_urls.add(url)
+                        pbar.update(1)
+                        if collected % 10 == 0:
+                            logger.info(f"Progress: {collected} new docs collected")
+                    else:
+                        existing_urls.add(url)
 
-                    # Parse the API response
-                    doc = self._parse_api_document(doc_data)
-
-                    if doc:
-                        if self.store.save_document(doc):
-                            collected += 1
-                            existing_urls.add(url)  # Add to set for future checks
-                            pbar.update(1)
-                            if collected % 10 == 0:
-                                logger.info(f"Progress: {collected} new docs collected (skipped {skipped_duplicates} duplicates)")
-                        else:
-                            # Shouldn't happen since we pre-check, but handle anyway
-                            existing_urls.add(url)
-
-                except Exception as e:
-                    logger.error(f"Error processing doc {doc_id}: {e}")
-                    continue
-
-                # Checkpoint (only when we have actual progress)
+                # Checkpoint
                 if collected > 0 and collected % settings.CHECKPOINT_INTERVAL == 0:
                     progress.documents_collected = collected
-                    progress.last_url = f"{self.base_url}/doc/{doc_id}/"
+                    progress.last_url = url
                     progress.last_updated = datetime.now()
                     self.store.save_progress(progress)
                     logger.info(f"Checkpoint: {collected} documents saved")
 
-        finally:
-            pbar.close()
+        except Exception as e:
+            logger.error(f"API scraping error: {e}")
 
-            # Save final progress
-            progress.documents_collected = collected
-            progress.last_updated = datetime.now()
-            progress.is_complete = collected >= self.target_count
-            self.store.save_progress(progress)
+        return collected, skipped_duplicates
 
-            logger.info(
-                f"{self.source.value}: Collected {collected}/{self.target_count} documents"
-            )
+    def _scrape_api_concurrent(
+        self,
+        progress: ScrapingProgress,
+        collected: int,
+        pbar: tqdm,
+        existing_urls: set[str],
+        existing_urls_lock: threading.Lock,
+    ) -> tuple[int, int]:
+        """Concurrent API scraping using ThreadPoolExecutor.
 
-        return collected
+        Returns:
+            Tuple of (collected count, skipped duplicates count).
+        """
+        skipped_duplicates = 0
+        doc_id_queue: Queue[str] = Queue(maxsize=self.num_threads * 2)
+        last_url = ""
+
+        def doc_id_producer():
+            """Produce document IDs to the queue."""
+            nonlocal last_url, skipped_duplicates
+            for doc_id in self._get_doc_ids_via_api():
+                if self._interrupted or collected >= self.target_count:
+                    break
+
+                # Skip duplicates before queuing
+                url = f"{self.base_url}/doc/{doc_id}/"
+                with existing_urls_lock:
+                    if url in existing_urls:
+                        skipped_duplicates += 1
+                        if skipped_duplicates % 100 == 0:
+                            logger.info(f"Skipped {skipped_duplicates} duplicates so far...")
+                        continue
+
+                doc_id_queue.put(doc_id)
+                last_url = url
+
+            # Signal end with None
+            for _ in range(self.num_threads):
+                doc_id_queue.put(None)
+
+        # Start producer in background
+        producer_thread = threading.Thread(target=doc_id_producer, daemon=True)
+        producer_thread.start()
+
+        try:
+            with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+                futures = {}
+                active_count = 0
+
+                while True:
+                    if self._interrupted:
+                        logger.warning("Interrupted! Saving progress...")
+                        break
+
+                    if collected >= self.target_count:
+                        break
+
+                    # Submit new tasks while we have capacity
+                    while active_count < self.num_threads:
+                        try:
+                            doc_id = doc_id_queue.get(timeout=0.1)
+                            if doc_id is None:
+                                break
+                            future = executor.submit(self._process_doc_id, doc_id)
+                            futures[future] = doc_id
+                            active_count += 1
+                        except Empty:
+                            break
+
+                    if not futures:
+                        break
+
+                    # Process completed futures
+                    done_futures = [f for f in futures if f.done()]
+                    for future in done_futures:
+                        doc_id = futures.pop(future)
+                        active_count -= 1
+
+                        try:
+                            url, doc = future.result()
+                            if doc:
+                                if self.store.save_document(doc):
+                                    with self._counter_lock:
+                                        collected += 1
+                                        pbar.update(1)
+                                    with existing_urls_lock:
+                                        existing_urls.add(url)
+                                    if collected % 10 == 0:
+                                        logger.info(f"Progress: {collected} new docs collected")
+                                else:
+                                    with existing_urls_lock:
+                                        existing_urls.add(url)
+                        except Exception as e:
+                            logger.error(f"Error processing doc {doc_id}: {e}")
+
+                    # Checkpoint (thread-safe)
+                    with self._counter_lock:
+                        if collected > 0 and collected % settings.CHECKPOINT_INTERVAL == 0:
+                            progress.documents_collected = collected
+                            progress.last_url = last_url
+                            progress.last_updated = datetime.now()
+                            self.store.save_progress(progress)
+                            logger.info(f"Checkpoint: {collected} documents saved")
+
+        except Exception as e:
+            logger.error(f"Concurrent API scraping error: {e}")
+
+        return collected, skipped_duplicates
 
     def scrape(self, resume: bool = True) -> int:
         """Run the scraper - uses API or HTML based on mode setting.
