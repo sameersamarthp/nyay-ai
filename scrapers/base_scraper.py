@@ -45,6 +45,14 @@ class BaseScraper(ABC):
         self._interrupted = False
         self._setup_signal_handlers()
 
+        # Initialize UserAgent for rotation
+        self._ua = None
+        if settings.ROTATE_USER_AGENT:
+            try:
+                self._ua = UserAgent()
+            except Exception:
+                logger.warning("Failed to initialize UserAgent, using static UA")
+
     def _get_default_target(self) -> int:
         """Get default target count for this source."""
         targets = {
@@ -100,6 +108,18 @@ class BaseScraper(ABC):
         signal.signal(signal.SIGINT, handler)
         signal.signal(signal.SIGTERM, handler)
 
+    def _rotate_user_agent(self) -> str:
+        """Rotate User-Agent for the next request.
+
+        Returns:
+            The new User-Agent string.
+        """
+        if self._ua:
+            new_ua = self._ua.random
+            self.session.headers["User-Agent"] = new_ua
+            return new_ua
+        return self.session.headers.get("User-Agent", "Unknown")
+
     @with_retry()
     def fetch_page(self, url: str) -> requests.Response:
         """Fetch a page with rate limiting and retry.
@@ -114,6 +134,10 @@ class BaseScraper(ABC):
             FetchError: If fetching fails after retries.
         """
         with self.rate_limiter.acquire():
+            # Rotate User-Agent before each request
+            user_agent = self._rotate_user_agent()
+            logger.debug(f"User-Agent: {user_agent}")
+
             try:
                 response = self.session.get(url, timeout=settings.REQUEST_TIMEOUT)
 
