@@ -368,18 +368,23 @@ class BaseScraper(ABC):
         # URL queue for feeding threads
         url_queue: Queue[str] = Queue(maxsize=self.num_threads * 2)
         last_url = ""
+        producer_done = False
+        none_count = 0  # Track how many None signals received
 
         def url_producer():
             """Produce URLs to the queue."""
-            nonlocal last_url
-            for url in self.get_document_urls():
-                if self._interrupted or collected >= self.target_count:
-                    break
-                url_queue.put(url)
-                last_url = url
-            # Signal end with None
-            for _ in range(self.num_threads):
-                url_queue.put(None)
+            nonlocal last_url, producer_done
+            try:
+                for url in self.get_document_urls():
+                    if self._interrupted or collected >= self.target_count:
+                        break
+                    url_queue.put(url)
+                    last_url = url
+            finally:
+                producer_done = True
+                # Signal end with None for each thread
+                for _ in range(self.num_threads):
+                    url_queue.put(None)
 
         # Start URL producer in background
         producer_thread = threading.Thread(target=url_producer, daemon=True)
@@ -401,18 +406,28 @@ class BaseScraper(ABC):
                     # Submit new tasks while we have capacity
                     while active_count < self.num_threads:
                         try:
-                            url = url_queue.get(timeout=0.1)
+                            url = url_queue.get(timeout=1.0)  # Longer timeout to wait for producer
                             if url is None:
-                                # End of URLs
-                                break
+                                none_count += 1
+                                if none_count >= self.num_threads:
+                                    # All end signals received
+                                    break
+                                continue
                             future = executor.submit(self._process_single_url, url)
                             futures[future] = url
                             active_count += 1
                         except Empty:
-                            break
+                            # Queue temporarily empty, check if producer is done
+                            if producer_done and url_queue.empty():
+                                break
+                            continue
 
-                    if not futures:
-                        # No more work
+                    # Check if we should exit
+                    if not futures and producer_done and url_queue.empty():
+                        break
+
+                    # Also exit if we received all end signals
+                    if none_count >= self.num_threads and not futures:
                         break
 
                     # Process completed futures
