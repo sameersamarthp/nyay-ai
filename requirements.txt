@@ -11,6 +11,11 @@ pydantic-settings>=2.1.0
 # Database
 sqlite-utils>=3.35.0
 
+# AWS Data Processing
+pyarrow>=14.0.0
+pandas>=2.0.0
+PyPDF2>=3.0.0
+
 # Retry & Rate Limiting
 tenacity>=8.2.0
 
