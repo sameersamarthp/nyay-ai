@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     TARGET_INDIAN_KANOON: int = 5_000
     TARGET_SUPREME_COURT: int = 2_000
     TARGET_HIGH_COURTS: int = 2_000
-    TARGET_INDIA_CODE: int = 5_000
+    TARGET_INDIA_CODE: int = 1_000
 
     # Date range for recent cases
     DATE_START: str = "2019-01-01"

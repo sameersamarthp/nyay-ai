@@ -276,7 +276,3 @@ class DocumentStore:
 
         return stats
 
-    def close(self) -> None:
-        """Close database connection."""
-        # sqlite-utils handles connection management automatically
-        pass

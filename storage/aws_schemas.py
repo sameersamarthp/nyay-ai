@@ -77,47 +77,6 @@ class AWSHighCourtDocument(BaseModel):
             data["pdf_processed"] = bool(data["pdf_processed"])
         return cls(**data)
 
-    @classmethod
-    def from_parquet_row(cls, row: dict, year: int, bench: str) -> Self:
-        """Create instance from a parquet row."""
-        # Parse date_of_registration from string format "DD-MM-YYYY"
-        date_of_reg = None
-        if row.get("date_of_registration"):
-            try:
-                parts = row["date_of_registration"].split("-")
-                if len(parts) == 3:
-                    date_of_reg = date(int(parts[2]), int(parts[1]), int(parts[0]))
-            except (ValueError, IndexError):
-                pass
-
-        # decision_date is already datetime64, convert to date
-        decision_dt = None
-        if row.get("decision_date") and not pd.isna(row["decision_date"]):
-            decision_dt = row["decision_date"].date() if hasattr(row["decision_date"], "date") else None
-
-        return cls(
-            cnr=row["cnr"],
-            court_code=row.get("court_code", ""),
-            title=row["title"],
-            description=row.get("description"),
-            judge=row.get("judge"),
-            pdf_link=row.get("pdf_link"),
-            date_of_registration=date_of_reg,
-            decision_date=decision_dt,
-            disposal_nature=row.get("disposal_nature"),
-            court=row["court"],
-            year=year,
-            bench=bench,
-        )
-
-
-# Import pandas here to avoid circular imports and make it optional
-try:
-    import pandas as pd
-except ImportError:
-    pd = None  # type: ignore
-
-
 class AWSProcessingProgress(BaseModel):
     """Track PDF processing progress for resume functionality."""
 

@@ -4,6 +4,7 @@ Abstract base class for all scrapers.
 Supports concurrent fetching using ThreadPoolExecutor.
 """
 
+import re
 import signal
 import threading
 from abc import ABC, abstractmethod
@@ -201,6 +202,21 @@ class BaseScraper(ABC):
             BeautifulSoup object.
         """
         return BeautifulSoup(html, "lxml")
+
+    def _clean_text(self, text: str) -> str:
+        """Clean extracted text. Override in subclasses for source-specific cleaning.
+
+        Args:
+            text: Raw text to clean.
+
+        Returns:
+            Cleaned text.
+        """
+        # Remove excessive whitespace
+        text = re.sub(r"\s+", " ", text)
+        # Remove leading/trailing whitespace from lines
+        lines = [line.strip() for line in text.split("\n")]
+        return "\n".join(line for line in lines if line)
 
     @abstractmethod
     def get_document_urls(self) -> Generator[str, None, None]:

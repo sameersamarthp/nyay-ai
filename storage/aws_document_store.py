@@ -317,6 +317,3 @@ class AWSDocumentStore:
 
         return stats
 
-    def close(self) -> None:
-        """Close database connection."""
-        pass
