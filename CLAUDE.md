@@ -290,12 +290,42 @@ logger.error("Failures needing attention: Database error")
 
 ### Phase 2: Data Processing (CURRENT)
 
+### Overview
+| Aspect | Value |
+|--------|-------|
+| **Input** | 57,398 documents with full_text |
+| **Output** | 8,000 training examples (JSONL) |
+| **Method** | LLM-based generation (Claude API) |
+| **Cost** | ~$7-10 (using Haiku) |
+
+### Quick Commands
+```bash
+# Generate training data
+python scripts/prepare_training_data.py
+
+# Resume if interrupted
+python scripts/prepare_training_data.py --resume
+
+# Validate output
+python scripts/validate_training_data.py --input-dir ./data/training
+```
+
+### Files to Create
+- `processors/llm_generator.py`
+- `config/llm_prompts.py`
+- `scripts/prepare_training_data.py`
+- `scripts/validate_training_data.py`
+
+### Task Status
 | Task | Status |
 |------|--------|
-| Clean extracted text | TODO |
-| Generate training data format | TODO |
-| Create train/validation splits | TODO |
-| Export for model training | TODO |
+| Create quality_filter.py | TODO |
+| Create llm_generator.py | TODO |
+| Generate 8K examples | TODO |
+| Validate and export | TODO |
+
+**Detailed specification**: See `docs/PHASE2_DATA_PROCESSING.md`
+```
 
 ### Phase 3: Model Training (LATER)
 
