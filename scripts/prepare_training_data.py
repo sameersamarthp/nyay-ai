@@ -194,8 +194,10 @@ def main():
     # Process documents
     processed = 0
     examples_generated = 0
+    examples_rejected = 0  # Track Stage 1 validation failures
 
     print(f"\nProcessing {len(documents)} documents...")
+    print("Note: Built-in validation will reject low-quality outputs during generation")
 
     with tqdm(total=len(documents), desc="Generating examples") as pbar:
         for doc in documents:
@@ -225,6 +227,12 @@ def main():
 
             # Generate examples
             result = generator.generate_for_document(cnr, full_text, task_types)
+
+            # Track rejections (when validation fails)
+            expected_examples = len(task_types)
+            actual_examples = len(result.examples)
+            if actual_examples < expected_examples:
+                examples_rejected += (expected_examples - actual_examples)
 
             if result.success and result.examples:
                 # Save examples
@@ -307,6 +315,10 @@ def main():
     print("=" * 50)
     print(f"Documents processed: {processed:,}")
     print(f"Examples generated: {examples_generated:,}")
+    if examples_rejected > 0:
+        total_attempted = examples_generated + examples_rejected
+        rejection_rate = (examples_rejected / total_attempted) * 100
+        print(f"Examples rejected (Stage 1 validation): {examples_rejected:,} ({rejection_rate:.1f}%)")
     print(f"Estimated cost: ${run.estimated_cost:.2f}")
     print(f"\nBy task type:")
     for task, count in stats.get("by_task_type", {}).items():
@@ -317,6 +329,17 @@ def main():
 
     if shutdown_requested:
         print("\nProgress saved. Run with --resume to continue.")
+    else:
+        print("\n" + "=" * 50)
+        print("NEXT STEPS: Stage 2 Validation (Recommended)")
+        print("=" * 50)
+        print("1. Run automated quality checks:")
+        print("   python scripts/automated_quality_checks.py")
+        print("\n2. Manually review flagged examples:")
+        print("   python scripts/manual_review_helper.py --sample 50")
+        print("\n3. If needed, filter out bad examples:")
+        print("   python scripts/filter_bad_examples.py --input train.jsonl ...")
+        print("\nSee docs/DATA_QUALITY_VERIFICATION.md for details")
 
 
 if __name__ == "__main__":

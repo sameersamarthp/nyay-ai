@@ -126,6 +126,13 @@ class LLMGenerator:
             input_tokens = response.usage.input_tokens
             output_tokens = response.usage.output_tokens
 
+            # Stage 1 Validation: Basic quality checks (built-in)
+            if not self._is_valid_output(output, task_type):
+                logger.warning(
+                    f"Generated output failed validation for {task_type.value}"
+                )
+                return None, 0, 0
+
             # Update totals
             self.total_input_tokens += input_tokens
             self.total_output_tokens += output_tokens
@@ -209,6 +216,79 @@ class LLMGenerator:
         """Reset token counters."""
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+
+    def _is_valid_output(self, output: str, task_type: TaskType) -> bool:
+        """Stage 1 validation: Fast, simple checks during generation.
+
+        Catches obvious failures to avoid saving bad examples.
+        More comprehensive validation happens later in separate scripts.
+
+        Args:
+            output: Generated output text.
+            task_type: Type of task.
+
+        Returns:
+            True if output passes basic validation.
+        """
+        # Check 1: Not empty
+        if not output or not output.strip():
+            logger.debug("Validation failed: Empty output")
+            return False
+
+        # Check 2: Minimum length (varies by task)
+        min_lengths = {
+            TaskType.SUMMARIZATION: 200,
+            TaskType.RESEARCH_QA: 150,
+            TaskType.OUTCOME_ANALYSIS: 150,
+            TaskType.INFO_EXTRACTION: 100,
+        }
+        min_length = min_lengths.get(task_type, 100)
+        if len(output) < min_length:
+            logger.debug(f"Validation failed: Output too short ({len(output)} < {min_length})")
+            return False
+
+        # Check 3: Not too long (likely an error or untruncated source)
+        if len(output) > 5000:
+            logger.debug(f"Validation failed: Output too long ({len(output)} chars)")
+            return False
+
+        # Check 4: Refusal patterns (LLM couldn't complete task)
+        refusal_patterns = [
+            "i don't have",
+            "i cannot",
+            "i'm unable",
+            "i apologize",
+            "cannot find",
+            "not available in the",
+            "insufficient information",
+        ]
+        output_lower = output.lower()
+        for pattern in refusal_patterns:
+            if pattern in output_lower:
+                logger.debug(f"Validation failed: Refusal pattern '{pattern}'")
+                return False
+
+        # Check 5: Task-specific format requirements
+        if task_type == TaskType.RESEARCH_QA:
+            # Must have both question and answer
+            if "question:" not in output_lower or "answer:" not in output_lower:
+                logger.debug("Validation failed: Missing Q&A format")
+                return False
+
+        if task_type == TaskType.INFO_EXTRACTION:
+            # Must have structured format (multiple colons for key-value pairs)
+            if output.count(":") < 3:
+                logger.debug("Validation failed: Insufficient structure for extraction")
+                return False
+
+        # Check 6: Basic content check (has legal terminology)
+        legal_terms = ["court", "case", "judgment", "order", "petition", "section", "act"]
+        if not any(term in output_lower for term in legal_terms):
+            logger.debug("Validation failed: Missing legal terminology")
+            return False
+
+        # All checks passed
+        return True
 
 
 class TaskAssigner:
