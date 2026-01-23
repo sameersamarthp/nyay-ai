@@ -16,6 +16,9 @@ pyarrow>=14.0.0
 pandas>=2.0.0
 PyPDF2>=3.0.0
 
+# LLM API (Phase 2: Training Data Generation)
+anthropic>=0.18.0
+
 # Retry & Rate Limiting
 tenacity>=8.2.0
 
