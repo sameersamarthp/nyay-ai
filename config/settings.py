@@ -87,11 +87,38 @@ class Settings(BaseSettings):
     # User agent rotation
     ROTATE_USER_AGENT: bool = True
 
+    # LLM Settings (Phase 2: Training Data Generation)
+    ANTHROPIC_API_KEY: str = ""  # Set via environment variable
+    LLM_MODEL: str = "claude-3-haiku-20240307"  # Cost-effective for generation
+    LLM_MAX_TOKENS: int = 2048  # Max output tokens per generation
+    LLM_TEMPERATURE: float = 0.7  # Balance variety and consistency
+    LLM_REQUESTS_PER_MINUTE: int = 50  # Conservative rate limit
+    LLM_MIN_REQUEST_INTERVAL: float = 1.2  # Ensures ~50 RPM
+    LLM_MAX_RETRIES: int = 3  # Retry failed API calls
+    LLM_RETRY_DELAY: float = 2.0  # Base delay for exponential backoff
+
+    # Training Data Settings
+    TRAINING_DATA_DIR: Path = DATA_DIR / "training"
+    TRAINING_TARGET_TOTAL: int = 8000  # Total training examples
+    TRAINING_TARGET_PER_TYPE: int = 2000  # 4 types x 2000 each
+    TRAINING_DOCUMENTS_NEEDED: int = 4000  # 2 examples per document
+    TRAINING_VAL_SPLIT: float = 0.1  # 10% validation set
+    TRAINING_MIN_WORD_COUNT: int = 500  # Minimum words for document quality
+    TRAINING_MAX_WORD_COUNT: int = 15000  # Maximum words (truncate longer)
+    TRAINING_MAX_INPUT_CHARS: int = 12000  # Truncate input to fit context
+    TRAINING_CHECKPOINT_INTERVAL: int = 50  # Save progress every N documents
+
+    # Cost Tracking (Haiku pricing per 1K tokens)
+    HAIKU_INPUT_COST_PER_1K: float = 0.00025  # $0.25 per 1M input tokens
+    HAIKU_OUTPUT_COST_PER_1K: float = 0.00125  # $1.25 per 1M output tokens
+    TRAINING_COST_LIMIT: float = 15.0  # Stop if cost exceeds this amount
+
     def ensure_directories(self) -> None:
         """Create required directories if they don't exist."""
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.TRAINING_DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 
