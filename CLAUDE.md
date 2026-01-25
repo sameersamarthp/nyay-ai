@@ -20,7 +20,8 @@
 nyay-ai-india/
 ├── CLAUDE.md                   # This file - project context (auto-read)
 ├── config/
-│   └── settings.py             # All configuration (URLs, limits, paths)
+│   ├── settings.py             # All configuration (URLs, limits, paths)
+│   └── llm_prompts.py          # Phase 2: Prompt templates for 4 task types
 ├── scrapers/                   # Web scrapers (alternative data sources)
 │   ├── __init__.py
 │   ├── base_scraper.py         # Abstract base class with rate limiting
@@ -30,13 +31,18 @@ nyay-ai-india/
 │   └── india_code.py           # India Code (statutes) scraper
 ├── processors/
 │   ├── __init__.py
-│   └── pdf_extractor.py        # PDF text extraction using PyPDF2
+│   ├── pdf_extractor.py        # PDF text extraction using PyPDF2
+│   ├── text_cleaner.py         # Phase 2: Text preprocessing for LLM input
+│   ├── quality_filter.py       # Phase 2: Document filtering & sampling
+│   └── llm_generator.py        # Phase 2: Claude API integration with validation
 ├── storage/
 │   ├── __init__.py
 │   ├── document_store.py       # SQLite + JSON storage (for scrapers)
 │   ├── schemas.py              # Pydantic models (for scrapers)
 │   ├── aws_document_store.py   # SQLite storage for AWS data (PRIMARY)
-│   └── aws_schemas.py          # Pydantic models for AWS data
+│   ├── aws_schemas.py          # Pydantic models for AWS data
+│   ├── training_schemas.py     # Phase 2: Training data Pydantic models
+│   └── training_store.py       # Phase 2: Training data DB operations + JSONL export
 ├── utils/
 │   ├── __init__.py
 │   ├── rate_limiter.py         # Respectful crawling
@@ -45,7 +51,19 @@ nyay-ai-india/
 ├── scripts/
 │   ├── run_collection.py       # Main entry point (for scrapers)
 │   ├── load_aws_metadata.py    # Load AWS parquet metadata → DB
-│   └── process_aws_pdfs.py     # Extract PDF text → DB
+│   ├── process_aws_pdfs.py     # Extract PDF text → DB
+│   ├── prepare_training_data.py        # Phase 2: Generate training examples (MAIN)
+│   ├── validate_training_data.py       # Phase 2: Validate JSONL output
+│   ├── automated_quality_checks.py     # Phase 2: Stage 2 automated validation
+│   ├── manual_review_helper.py         # Phase 2: Visual side-by-side review
+│   ├── interactive_review.py           # Phase 2: Interactive review with Q&A
+│   └── filter_bad_examples.py          # Phase 2: Remove bad CNRs from JSONL
+├── docs/                       # Phase 2: Documentation
+│   ├── PHASE2_DATA_PROCESSING.md       # Phase 2 specification
+│   ├── DATA_QUALITY_VERIFICATION.md    # Quality verification guide
+│   ├── BAD_TRAINING_DATA_IMPACT.md     # Impact of bad training data
+│   ├── TWO_STAGE_VALIDATION.md         # Validation strategy explained
+│   └── MANUAL_REVIEW_GUIDE.md          # Manual review instructions
 ├── tests/
 │   ├── __init__.py
 │   ├── test_scrapers.py
@@ -53,6 +71,13 @@ nyay-ai-india/
 ├── data/                       # Collected data (gitignored)
 │   ├── raw/                    # Raw scraped documents
 │   ├── processed/              # Cleaned documents
+│   ├── training/               # Phase 2: Training data (JSONL files)
+│   │   ├── train.jsonl         # 90% training examples (~7,200)
+│   │   ├── val.jsonl           # 10% validation examples (~800)
+│   │   ├── review_results.json # Manual review results
+│   │   ├── bad_cnrs.txt        # Bad CNRs to filter
+│   │   ├── train_clean.jsonl   # Cleaned training set
+│   │   └── val_clean.jsonl     # Cleaned validation set
 │   ├── aws_data/               # AWS dataset (parquet + tar files)
 │   │   ├── data/year=2025/     # Parquet metadata files
 │   │   └── tar/year=2025/      # PDF tar files
@@ -136,6 +161,9 @@ class AWSHighCourtDocument(BaseModel):
 | `aws_processing_progress` | PDF processing progress tracking | `id` (court:bench:year) |
 | `documents` | Scraped documents (alternative sources) | `doc_id` |
 | `scraping_progress` | Scraper progress tracking | `source` |
+| `training_examples` | Phase 2: Generated training examples | `id` |
+| `training_generation_progress` | Phase 2: Per-document generation progress | `cnr` |
+| `training_run_metadata` | Phase 2: Generation run tracking & costs | `run_id` |
 
 ---
 
@@ -210,6 +238,89 @@ python scripts/run_collection.py --source indian_kanoon --dry-run
 python scripts/run_collection.py --resume
 ```
 
+### Phase 2: Training Data Generation
+
+```bash
+# 1. Generate training examples (8,000 from 4,000 documents)
+python scripts/prepare_training_data.py
+
+# Test with small batch first
+python scripts/prepare_training_data.py --limit 10  # 20 examples
+
+# Dry run (see plan without API calls)
+python scripts/prepare_training_data.py --dry-run
+
+# Resume if interrupted
+python scripts/prepare_training_data.py --resume
+
+# With cost limit
+python scripts/prepare_training_data.py --cost-limit 15.0
+
+# 2. Validate generated data
+python scripts/validate_training_data.py --input-dir ./data/training
+
+# 3. Stage 2 Quality Checks (automated)
+python scripts/automated_quality_checks.py
+
+# 4. Manual Review (visual - side by side)
+python scripts/manual_review_helper.py --sample 20
+
+# Manual review (interactive - with Q&A)
+python scripts/interactive_review.py --sample 20
+python scripts/interactive_review.py --split val  # Review validation set
+python scripts/interactive_review.py --cnr DLHC010011762025  # Specific CNR
+
+# Resume interrupted review session
+python scripts/interactive_review.py --sample 500 \
+  --continue-session data/training/review_results.json
+
+# 5. Filter out bad examples
+python scripts/filter_bad_examples.py \
+  --input data/training/train.jsonl \
+  --remove data/training/bad_cnrs.txt \
+  --output data/training/train_clean.jsonl
+```
+
+### Phase 2: Database Queries
+
+```bash
+# Check training data counts
+sqlite3 data/metadata.db "SELECT
+    split,
+    task_type,
+    COUNT(*) as count
+FROM training_examples
+GROUP BY split, task_type
+ORDER BY split, task_type"
+
+# Check generation progress
+sqlite3 data/metadata.db "SELECT
+    status,
+    COUNT(*) as count,
+    SUM(examples_generated) as total_examples
+FROM training_generation_progress
+GROUP BY status"
+
+# Check run statistics
+sqlite3 data/metadata.db "SELECT
+    run_id,
+    started_at,
+    documents_processed,
+    examples_generated,
+    estimated_cost
+FROM training_run_metadata
+ORDER BY started_at DESC
+LIMIT 5"
+
+# Sample generated examples
+sqlite3 data/metadata.db "SELECT
+    cnr,
+    task_type,
+    LENGTH(output) as output_length
+FROM training_examples
+LIMIT 5"
+```
+
 ### Testing
 
 ```bash
@@ -239,6 +350,7 @@ pytest tests/ -v
 | `pyarrow` | >=14.0.0 | Parquet file reading |
 | `pandas` | >=2.0.0 | DataFrame operations |
 | `PyPDF2` | >=3.0.0 | PDF text extraction |
+| `anthropic` | >=0.18.0 | Phase 2: Claude API client |
 
 ---
 
@@ -288,44 +400,141 @@ logger.error("Failures needing attention: Database error")
 | Extract text from 57,398 PDFs | ✅ Done |
 | Web scrapers (alternative) | ✅ Done |
 
-### Phase 2: Data Processing (CURRENT)
+### Phase 2: Data Processing ✅ IMPLEMENTATION COMPLETE
 
 ### Overview
 | Aspect | Value |
 |--------|-------|
 | **Input** | 57,398 documents with full_text |
-| **Output** | 8,000 training examples (JSONL) |
-| **Method** | LLM-based generation (Claude API) |
-| **Cost** | ~$7-10 (using Haiku) |
+| **Eligible for training** | 26,400 (after quality filtering) |
+| **Selected** | 4,000 documents (balanced: 2K Delhi HC, 2K Bombay HC) |
+| **Output** | 8,000 training examples (2 per document) |
+| **Method** | LLM-based generation (Claude Haiku API) |
+| **Estimated Cost** | ~$13 for full run (tested: $0.02 for 10 docs) |
+| **Time** | ~2.7 hours at 50 RPM |
+
+### Task Types (Equal Distribution)
+| Task Type | Count | Purpose |
+|-----------|-------|---------|
+| Summarization | 2,000 | Structured summaries of judgments |
+| Research Q&A | 2,000 | Legal questions + detailed answers |
+| Outcome Analysis | 2,000 | Explain reasoning behind court decisions |
+| Info Extraction | 2,000 | Extract parties, statutes, precedents, relief |
 
 ### Quick Commands
 ```bash
-# Generate training data
+# 1. Generate training data (full run)
 python scripts/prepare_training_data.py
+
+# Test with small batch
+python scripts/prepare_training_data.py --limit 10
+
+# Dry run (see plan)
+python scripts/prepare_training_data.py --dry-run
 
 # Resume if interrupted
 python scripts/prepare_training_data.py --resume
 
-# Validate output
+# 2. Validate output
 python scripts/validate_training_data.py --input-dir ./data/training
+
+# 3. Quality verification (2-stage validation)
+python scripts/automated_quality_checks.py  # Stage 2: Automated
+python scripts/interactive_review.py --sample 20  # Stage 2: Manual
+
+# 4. Filter bad examples
+python scripts/filter_bad_examples.py \
+  --input data/training/train.jsonl \
+  --remove data/training/bad_cnrs.txt \
+  --output data/training/train_clean.jsonl
 ```
 
-### Files to Create
-- `processors/llm_generator.py`
-- `config/llm_prompts.py`
-- `scripts/prepare_training_data.py`
-- `scripts/validate_training_data.py`
+### Implementation Status
+
+| Component | File | Status |
+|-----------|------|--------|
+| **Configuration** | `config/settings.py` | ✅ Updated with LLM settings |
+| **Prompts** | `config/llm_prompts.py` | ✅ Created (4 task types) |
+| **Schemas** | `storage/training_schemas.py` | ✅ Created (Pydantic v2) |
+| **Storage** | `storage/training_store.py` | ✅ Created (DB + JSONL export) |
+| **Text Cleaner** | `processors/text_cleaner.py` | ✅ Created |
+| **Quality Filter** | `processors/quality_filter.py` | ✅ Created |
+| **LLM Generator** | `processors/llm_generator.py` | ✅ Created (with Stage 1 validation) |
+| **Main Script** | `scripts/prepare_training_data.py` | ✅ Created (resume, cost tracking) |
+| **Validator** | `scripts/validate_training_data.py` | ✅ Created |
+| **Quality Checks** | `scripts/automated_quality_checks.py` | ✅ Created (Stage 2 automated) |
+| **Manual Review** | `scripts/manual_review_helper.py` | ✅ Created (visual) |
+| **Interactive Review** | `scripts/interactive_review.py` | ✅ Created (Q&A) |
+| **Filter** | `scripts/filter_bad_examples.py` | ✅ Created |
+| **Dependencies** | `requirements.txt` | ✅ Added anthropic>=0.18.0 |
 
 ### Task Status
 | Task | Status |
 |------|--------|
-| Create quality_filter.py | TODO |
-| Create llm_generator.py | TODO |
-| Generate 8K examples | TODO |
-| Validate and export | TODO |
+| Design prompts for 4 task types | ✅ Done |
+| Implement text preprocessing | ✅ Done |
+| Implement quality filtering | ✅ Done |
+| Implement LLM generator | ✅ Done (with validation) |
+| Create main orchestration script | ✅ Done (with resume) |
+| Add progress tracking | ✅ Done (SQLite-based) |
+| Add cost tracking | ✅ Done (real-time) |
+| Implement JSONL export | ✅ Done |
+| Create validation script | ✅ Done |
+| Create quality verification tools | ✅ Done (2-stage validation) |
+| Test with 10 documents | ✅ Done (generated 20 examples, $0.02) |
+| **Full run (4,000 documents)** | ⏳ Ready to run |
 
-**Detailed specification**: See `docs/PHASE2_DATA_PROCESSING.md`
+### Two-Stage Validation Strategy
+
+**Stage 1: Built-in (During Generation)**
+- Location: `processors/llm_generator.py` → `_is_valid_output()`
+- Checks: Empty output, length, refusals, format, legal terminology
+- Saves: ~$1+ in API costs by rejecting bad outputs immediately
+
+**Stage 2: Post-Generation (Separate Scripts)**
+- Automated: `automated_quality_checks.py` (hallucination, repetition, format)
+- Manual: `interactive_review.py` (5-question checklist per example)
+- Filter: `filter_bad_examples.py` (remove bad CNRs)
+
+### Documentation
+| Doc | Purpose |
+|-----|---------|
+| `docs/PHASE2_DATA_PROCESSING.md` | Detailed Phase 2 specification |
+| `docs/DATA_QUALITY_VERIFICATION.md` | Quality verification guide |
+| `docs/BAD_TRAINING_DATA_IMPACT.md` | Impact of bad training data |
+| `docs/TWO_STAGE_VALIDATION.md` | Validation strategy explained |
+| `docs/MANUAL_REVIEW_GUIDE.md` | Manual review instructions |
+
+### Output Format (JSONL)
+
+**Location:** `data/training/`
+
+**train.jsonl** (90% = ~7,200 examples)
+```json
+{
+  "instruction": "Analyze the outcome of this judgment...",
+  "input": "[Full judgment text...]",
+  "output": "[Generated analysis...]",
+  "metadata": {
+    "cnr": "HCBM030212662025",
+    "task_type": "outcome_analysis",
+    "court": "Bombay High Court",
+    "word_count": 1543,
+    "input_tokens": 2847,
+    "output_tokens": 421
+  }
+}
 ```
+
+**val.jsonl** (10% = ~800 examples)
+- Same format as train.jsonl
+- Used for validation during fine-tuning (Phase 3)
+
+### Next Steps
+1. ✅ **Implementation complete** - All files created and tested
+2. ⏳ **Ready for full run** - Generate 8,000 examples (~$13, 2.7 hours)
+3. ⏳ **Quality verification** - Review generated examples
+4. ⏳ **Phase 3** - Fine-tune Llama 3.2 3B with clean data
 
 ### Phase 3: Model Training (LATER)
 
@@ -358,3 +567,12 @@ python scripts/validate_training_data.py --input-dir ./data/training
 | 2025-01-22 | Loaded 58,222 documents from Delhi HC and Bombay HC |
 | 2025-01-22 | Extracted text from 57,398 PDFs |
 | 2025-01-22 | Phase 1 (Data Collection) complete |
+| 2025-01-25 | Phase 2 implementation complete |
+| 2025-01-25 | Created config/llm_prompts.py (4 task type prompts) |
+| 2025-01-25 | Created processors/ (text_cleaner, quality_filter, llm_generator) |
+| 2025-01-25 | Created storage/ (training_schemas, training_store) |
+| 2025-01-25 | Created scripts/ (prepare_training_data, validate, quality checks, review tools) |
+| 2025-01-25 | Created docs/ (5 documentation files for Phase 2) |
+| 2025-01-25 | Tested with 10 documents: generated 20 examples ($0.02) |
+| 2025-01-25 | Implemented two-stage validation (built-in + post-generation) |
+| 2025-01-25 | Ready for full run: 4,000 docs → 8,000 examples (~$13) |
