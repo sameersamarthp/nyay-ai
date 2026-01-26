@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 2048  # Max output tokens per generation
     LLM_TEMPERATURE: float = 0.7  # Balance variety and consistency
     LLM_REQUESTS_PER_MINUTE: int = 50  # Conservative rate limit
-    LLM_MIN_REQUEST_INTERVAL: float = 1.2  # Ensures ~50 RPM
+    LLM_MIN_REQUEST_INTERVAL: float = 0.15  # Ensures ~400 RPM
     LLM_MAX_RETRIES: int = 3  # Retry failed API calls
     LLM_RETRY_DELAY: float = 2.0  # Base delay for exponential backoff
 
