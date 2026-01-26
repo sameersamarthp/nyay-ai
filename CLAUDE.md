@@ -536,14 +536,84 @@ python scripts/filter_bad_examples.py \
 3. ⏳ **Quality verification** - Review generated examples
 4. ⏳ **Phase 3** - Fine-tune Llama 3.2 3B with clean data
 
-### Phase 3: Model Training (LATER)
+### Phase 3: Model Training (NEXT)
 
+### Overview
+| Aspect | Value |
+|--------|-------|
+| **Base Model** | Llama 3.2 3B Instruct |
+| **Method** | QLoRA 8-bit (best quality/memory trade-off) |
+| **Framework** | MLX (Apple Silicon optimized) |
+| **Training Data** | 8,000 examples (7,200 train + 800 val) |
+| **Hardware** | MacBook Pro M2, 32GB RAM |
+| **Memory Usage** | ~8 GB (comfortable on 32GB) |
+| **Training Time** | 4-8 hours |
+| **Output** | Fine-tuned Nyay AI model |
+
+### Why QLoRA 8-bit?
+| Factor | Benefit |
+|--------|---------|
+| **Memory** | 8GB vs 28GB (full fine-tune) - fits on M2 |
+| **Quality** | 97-99% of full fine-tune (only 0.5-1% loss) |
+| **Speed** | Trains only 0.3% of parameters (8M vs 3B) |
+| **Legal domain** | Higher precision important for accuracy |
+
+### Quick Commands
+```bash
+# 1. Setup training environment
+python3 -m venv .venv-train && source .venv-train/bin/activate
+pip install -r requirements-training.txt
+
+# 2. Convert data to MLX format
+python scripts/convert_to_mlx_format.py
+
+# 3. Train model (4-8 hours)
+python scripts/train_model.py
+
+# 4. Evaluate
+python scripts/evaluate_model.py
+
+# 5. Export to GGUF for deployment
+python scripts/export_model.py --format gguf --quantize q4_k_m
+
+# 6. Run with Ollama
+ollama create nyay-ai -f Modelfile
+ollama run nyay-ai
+```
+
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `config/training_config.yaml` | Training hyperparameters |
+| `scripts/convert_to_mlx_format.py` | JSONL → MLX chat format |
+| `scripts/train_model.py` | Main training script |
+| `scripts/evaluate_model.py` | Evaluation metrics |
+| `scripts/export_model.py` | Export to GGUF |
+| `requirements-training.txt` | Training dependencies |
+
+### Task Status
 | Task | Status |
 |------|--------|
-| Fine-tune Llama 3.2 3B | TODO |
-| Quantization for M2 | TODO |
-| Evaluation | TODO |
-| Deployment | TODO |
+| Plan Phase 3 | ✅ Done |
+| Setup training environment | TODO |
+| Convert training data format | TODO |
+| Download Llama 3.2 3B | TODO |
+| Train with QLoRA 8-bit | TODO |
+| Evaluate model | TODO |
+| Export & quantize | TODO |
+| Deploy with Ollama | TODO |
+
+### Success Criteria (Phase 3)
+| Metric | Target |
+|--------|--------|
+| Training loss | < 1.0 |
+| Validation loss | < 1.2 |
+| Summarization quality | > 70% human approval |
+| Q&A accuracy | > 75% correct |
+| Hallucination rate | < 5% |
+| Inference speed | > 20 tokens/sec |
+
+**Detailed specification**: See `docs/PHASE3_MODEL_TRAINING.md`
 
 ---
 
@@ -576,3 +646,6 @@ python scripts/filter_bad_examples.py \
 | 2025-01-25 | Tested with 10 documents: generated 20 examples ($0.02) |
 | 2025-01-25 | Implemented two-stage validation (built-in + post-generation) |
 | 2025-01-25 | Ready for full run: 4,000 docs → 8,000 examples (~$13) |
+| 2025-01-26 | Started full generation run (4,000 documents) |
+| 2025-01-26 | Planned Phase 3: QLoRA 8-bit fine-tuning with MLX |
+| 2025-01-26 | Created docs/PHASE3_MODEL_TRAINING.md |
