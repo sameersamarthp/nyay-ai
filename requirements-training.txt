@@ -1,0 +1,37 @@
+# Phase 3: Model Training Dependencies
+# For fine-tuning Llama 3.2 3B with MLX on Apple Silicon
+
+# MLX Framework (Apple Silicon optimized)
+mlx>=0.20.0
+mlx-lm>=0.19.0
+
+# Model downloading and management
+huggingface-hub>=0.20.0
+transformers>=4.37.0
+
+# Data processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Progress tracking
+tqdm>=4.66.0
+
+# YAML config
+pyyaml>=6.0
+
+# Evaluation metrics
+scikit-learn>=1.3.0
+
+# Project dependencies (needed for utils)
+pydantic>=2.5.0
+pydantic-settings>=2.0.0
+sqlite-utils>=3.35.0
+tenacity>=8.2.0
+
+# Export to GGUF (optional - for Ollama deployment)
+# llama-cpp-python>=0.2.0
+
+# Note: Install in separate environment
+# python -m venv .venv-train
+# source .venv-train/bin/activate
+# pip install -r requirements-training.txt
