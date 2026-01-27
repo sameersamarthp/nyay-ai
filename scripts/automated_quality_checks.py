@@ -17,6 +17,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from storage.aws_document_store import AWSDocumentStore
+from utils.logger import get_script_logger
+
+script_output = get_script_logger(__name__)
 
 
 def check_output_quality(example: dict, source_doc: str) -> list[str]:
@@ -97,8 +100,8 @@ def check_output_quality(example: dict, source_doc: str) -> list[str]:
 
 
 def main():
-    print("Running automated quality checks...")
-    print("=" * 80)
+    script_output.info("Running automated quality checks...")
+    script_output.info("=" * 80)
 
     # Load examples
     examples = []
@@ -107,7 +110,7 @@ def main():
     with open("data/training/val.jsonl", "r") as f:
         examples.extend([("val", json.loads(line)) for line in f])
 
-    print(f"Loaded {len(examples)} examples\n")
+    script_output.info(f"Loaded {len(examples)} examples\n")
 
     # Load source documents
     store = AWSDocumentStore()
@@ -131,27 +134,27 @@ def main():
             clean += 1
 
     # Report results
-    print("\n" + "=" * 80)
-    print("QUALITY CHECK RESULTS")
-    print("=" * 80)
-    print(f"Total examples: {len(examples)}")
-    print(f"Clean examples: {clean} ({clean/len(examples)*100:.1f}%)")
-    print(f"Flagged for review: {len(flagged)} ({len(flagged)/len(examples)*100:.1f}%)")
+    script_output.info("\n" + "=" * 80)
+    script_output.info("QUALITY CHECK RESULTS")
+    script_output.info("=" * 80)
+    script_output.info(f"Total examples: {len(examples)}")
+    script_output.info(f"Clean examples: {clean} ({clean/len(examples)*100:.1f}%)")
+    script_output.info(f"Flagged for review: {len(flagged)} ({len(flagged)/len(examples)*100:.1f}%)")
 
     if flagged:
-        print("\n" + "=" * 80)
-        print("FLAGGED EXAMPLES (need manual review):")
-        print("=" * 80)
+        script_output.info("\n" + "=" * 80)
+        script_output.info("FLAGGED EXAMPLES (need manual review):")
+        script_output.info("=" * 80)
 
         for split, cnr, warnings in flagged:
-            print(f"\n[{split.upper()}] CNR: {cnr}")
+            script_output.info(f"\n[{split.upper()}] CNR: {cnr}")
             for warning in warnings:
-                print(f"  {warning}")
+                script_output.info(f"  {warning}")
 
         # Summary by warning type
-        print("\n" + "=" * 80)
-        print("WARNING SUMMARY:")
-        print("=" * 80)
+        script_output.info("\n" + "=" * 80)
+        script_output.info("WARNING SUMMARY:")
+        script_output.info("=" * 80)
         warning_counts = Counter()
         for _, _, warnings in flagged:
             for warning in warnings:
@@ -160,23 +163,23 @@ def main():
                 warning_counts[warning_type] += 1
 
         for warning_type, count in warning_counts.most_common():
-            print(f"{warning_type}: {count}")
+            script_output.info(f"{warning_type}: {count}")
 
-    print("\n" + "=" * 80)
-    print("RECOMMENDATION:")
-    print("=" * 80)
+    script_output.info("\n" + "=" * 80)
+    script_output.info("RECOMMENDATION:")
+    script_output.info("=" * 80)
     if len(flagged) == 0:
-        print("✅ All examples passed automated checks!")
-        print("   Still recommend manual review of 5-10% sample.")
+        script_output.info("✅ All examples passed automated checks!")
+        script_output.info("   Still recommend manual review of 5-10% sample.")
     elif len(flagged) / len(examples) < 0.1:
-        print(f"✅ Only {len(flagged)/len(examples)*100:.1f}% flagged - good quality!")
-        print("   Manually review flagged examples above.")
+        script_output.info(f"✅ Only {len(flagged)/len(examples)*100:.1f}% flagged - good quality!")
+        script_output.info("   Manually review flagged examples above.")
     elif len(flagged) / len(examples) < 0.3:
-        print(f"⚠️  {len(flagged)/len(examples)*100:.1f}% flagged - moderate issues.")
-        print("   Review flagged examples and random 10% sample.")
+        script_output.info(f"⚠️  {len(flagged)/len(examples)*100:.1f}% flagged - moderate issues.")
+        script_output.info("   Review flagged examples and random 10% sample.")
     else:
-        print(f"❌ {len(flagged)/len(examples)*100:.1f}% flagged - significant issues!")
-        print("   Consider regenerating with better prompts or different model.")
+        script_output.info(f"❌ {len(flagged)/len(examples)*100:.1f}% flagged - significant issues!")
+        script_output.info("   Consider regenerating with better prompts or different model.")
 
 
 if __name__ == "__main__":

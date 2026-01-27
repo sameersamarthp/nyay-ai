@@ -33,9 +33,10 @@ from processors.llm_generator import LLMGenerator, TaskAssigner
 from storage.aws_document_store import AWSDocumentStore
 from storage.training_store import TrainingStore
 from storage.training_schemas import TrainingExample, TrainingProgress
-from utils.logger import get_logger
+from utils.logger import get_logger, get_script_logger
 
-logger = get_logger(__name__)
+logger = get_logger(__name__)  # For operational logs
+script_output = get_script_logger(__name__)  # For clean user-facing output
 
 # Global flag for graceful shutdown
 shutdown_requested = False
@@ -120,7 +121,7 @@ def main():
         failed_cnrs = training_store.get_failed_cnrs()
 
         if pending_cnrs or failed_cnrs:
-            print(
+            script_output.info(
                 f"Resuming: {len(pending_cnrs)} pending, {len(failed_cnrs)} to retry"
             )
             cnrs_to_process = pending_cnrs + failed_cnrs
@@ -138,36 +139,36 @@ def main():
                         }
                     )
         else:
-            print("No pending documents to resume. Starting fresh.")
+            script_output.info("No pending documents to resume. Starting fresh.")
             args.resume = False
 
     if not args.resume:
         # Sample documents
-        print("Sampling documents...")
+        script_output.info("Sampling documents...")
         documents, stats = sample_for_training(
             doc_store,
             total_needed=args.limit or settings.TRAINING_DOCUMENTS_NEEDED,
             seed=args.seed,
         )
 
-        print(f"\nSampling Statistics:")
-        print(f"  Total in database: {stats.total_documents:,}")
-        print(f"  After word filter: {stats.after_word_filter:,}")
-        print(f"  Selected: {stats.selected_for_training:,}")
-        print(f"  By court:")
+        script_output.info(f"\nSampling Statistics:")
+        script_output.info(f"  Total in database: {stats.total_documents:,}")
+        script_output.info(f"  After word filter: {stats.after_word_filter:,}")
+        script_output.info(f"  Selected: {stats.selected_for_training:,}")
+        script_output.info(f"  By court:")
         for court, count in stats.by_court.items():
-            print(f"    {court}: {count:,}")
+            script_output.info(f"    {court}: {count:,}")
 
         # Initialize progress tracking
         cnrs = [doc["cnr"] for doc in documents]
         new_count = training_store.init_progress_for_documents(cnrs)
-        print(f"Initialized {new_count} new progress records")
+        script_output.info(f"Initialized {new_count} new progress records")
 
     if args.dry_run:
-        print("\nDry run - would process:")
-        print(f"  Documents: {len(documents)}")
-        print(f"  Examples to generate: {len(documents) * 2}")
-        print(
+        script_output.info("\nDry run - would process:")
+        script_output.info(f"  Documents: {len(documents)}")
+        script_output.info(f"  Examples to generate: {len(documents) * 2}")
+        script_output.info(
             f"  Estimated cost: ${len(documents) * 2 * 0.002:.2f}"
         )  # Rough estimate
         return
@@ -196,8 +197,8 @@ def main():
     examples_generated = 0
     examples_rejected = 0  # Track Stage 1 validation failures
 
-    print(f"\nProcessing {len(documents)} documents...")
-    print("Note: Built-in validation will reject low-quality outputs during generation")
+    script_output.info(f"\nProcessing {len(documents)} documents...")
+    script_output.info("Note: Built-in validation will reject low-quality outputs during generation")
 
     with tqdm(total=len(documents), desc="Generating examples") as pbar:
         for doc in documents:
@@ -276,7 +277,7 @@ def main():
             current_cost = generator.get_estimated_cost()
             if current_cost > args.cost_limit:
                 logger.warning(f"Cost limit reached: ${current_cost:.2f}")
-                print(f"\nCost limit of ${args.cost_limit:.2f} reached!")
+                script_output.info(f"\nCost limit of ${args.cost_limit:.2f} reached!")
                 break
 
             # Periodic checkpoint
@@ -303,43 +304,43 @@ def main():
 
     # Export to JSONL
     if not shutdown_requested:
-        print("\nExporting to JSONL...")
+        script_output.info("\nExporting to JSONL...")
         train_path, val_path = training_store.export_to_jsonl()
-        print(f"  Train: {train_path}")
-        print(f"  Val: {val_path}")
+        script_output.info(f"  Train: {train_path}")
+        script_output.info(f"  Val: {val_path}")
 
     # Print summary
     stats = training_store.get_stats()
-    print("\n" + "=" * 50)
-    print("GENERATION COMPLETE" if not shutdown_requested else "GENERATION INTERRUPTED")
-    print("=" * 50)
-    print(f"Documents processed: {processed:,}")
-    print(f"Examples generated: {examples_generated:,}")
+    script_output.info("\n" + "=" * 50)
+    script_output.info("GENERATION COMPLETE" if not shutdown_requested else "GENERATION INTERRUPTED")
+    script_output.info("=" * 50)
+    script_output.info(f"Documents processed: {processed:,}")
+    script_output.info(f"Examples generated: {examples_generated:,}")
     if examples_rejected > 0:
         total_attempted = examples_generated + examples_rejected
         rejection_rate = (examples_rejected / total_attempted) * 100
-        print(f"Examples rejected (Stage 1 validation): {examples_rejected:,} ({rejection_rate:.1f}%)")
-    print(f"Estimated cost: ${run.estimated_cost:.2f}")
-    print(f"\nBy task type:")
+        script_output.info(f"Examples rejected (Stage 1 validation): {examples_rejected:,} ({rejection_rate:.1f}%)")
+    script_output.info(f"Estimated cost: ${run.estimated_cost:.2f}")
+    script_output.info(f"\nBy task type:")
     for task, count in stats.get("by_task_type", {}).items():
-        print(f"  {task}: {count:,}")
-    print(f"\nBy split:")
+        script_output.info(f"  {task}: {count:,}")
+    script_output.info(f"\nBy split:")
     for split, count in stats.get("by_split", {}).items():
-        print(f"  {split}: {count:,}")
+        script_output.info(f"  {split}: {count:,}")
 
     if shutdown_requested:
-        print("\nProgress saved. Run with --resume to continue.")
+        script_output.info("\nProgress saved. Run with --resume to continue.")
     else:
-        print("\n" + "=" * 50)
-        print("NEXT STEPS: Stage 2 Validation (Recommended)")
-        print("=" * 50)
-        print("1. Run automated quality checks:")
-        print("   python scripts/automated_quality_checks.py")
-        print("\n2. Manually review flagged examples:")
-        print("   python scripts/manual_review_helper.py --sample 50")
-        print("\n3. If needed, filter out bad examples:")
-        print("   python scripts/filter_bad_examples.py --input train.jsonl ...")
-        print("\nSee docs/DATA_QUALITY_VERIFICATION.md for details")
+        script_output.info("\n" + "=" * 50)
+        script_output.info("NEXT STEPS: Stage 2 Validation (Recommended)")
+        script_output.info("=" * 50)
+        script_output.info("1. Run automated quality checks:")
+        script_output.info("   python scripts/automated_quality_checks.py")
+        script_output.info("\n2. Manually review flagged examples:")
+        script_output.info("   python scripts/manual_review_helper.py --sample 50")
+        script_output.info("\n3. If needed, filter out bad examples:")
+        script_output.info("   python scripts/filter_bad_examples.py --input train.jsonl ...")
+        script_output.info("\nSee docs/DATA_QUALITY_VERIFICATION.md for details")
 
 
 if __name__ == "__main__":

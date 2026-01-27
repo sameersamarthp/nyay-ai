@@ -25,9 +25,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from storage.aws_document_store import AWSDocumentStore
 from storage.aws_schemas import AWSHighCourtDocument
-from utils.logger import get_logger
+from utils.logger import get_logger, get_script_logger
 
 logger = get_logger(__name__)
+script_output = get_script_logger(__name__)
 
 
 def parse_date_of_registration(date_str: str | None) -> date | None:
@@ -236,10 +237,10 @@ def main():
     logger.info(f"Found {len(parquet_files)} parquet files to process")
 
     if args.dry_run:
-        print("\nDry run - would load the following files:")
+        script_output.info("\nDry run - would load the following files:")
         for pq_path, year, bench in parquet_files:
             df = pd.read_parquet(pq_path)
-            print(f"  {pq_path}: {len(df)} rows (year={year}, bench={bench})")
+            script_output.info(f"  {pq_path}: {len(df)} rows (year={year}, bench={bench})")
         return
 
     # Initialize store
@@ -257,23 +258,23 @@ def main():
         total_inserted += inserted
 
     # Print summary
-    print("\n" + "=" * 50)
-    print("LOADING COMPLETE")
-    print("=" * 50)
-    print(f"Total rows processed: {total_loaded:,}")
-    print(f"Total documents inserted: {total_inserted:,}")
+    script_output.info("\n" + "=" * 50)
+    script_output.info("LOADING COMPLETE")
+    script_output.info("=" * 50)
+    script_output.info(f"Total rows processed: {total_loaded:,}")
+    script_output.info(f"Total documents inserted: {total_inserted:,}")
 
     # Show stats
     stats = store.get_stats()
-    print(f"\nDatabase statistics:")
-    print(f"  Total documents: {stats['total_documents']:,}")
-    print(f"  Processed (with PDF text): {stats['processed_documents']:,}")
-    print(f"  Unprocessed (no PDF text): {stats['unprocessed_documents']:,}")
+    script_output.info(f"\nDatabase statistics:")
+    script_output.info(f"  Total documents: {stats['total_documents']:,}")
+    script_output.info(f"  Processed (with PDF text): {stats['processed_documents']:,}")
+    script_output.info(f"  Unprocessed (no PDF text): {stats['unprocessed_documents']:,}")
 
     if stats["by_court"]:
-        print(f"\nBy court:")
+        script_output.info(f"\nBy court:")
         for court, count in sorted(stats["by_court"].items(), key=lambda x: -x[1])[:10]:
-            print(f"  {court}: {count:,}")
+            script_output.info(f"  {court}: {count:,}")
 
 
 if __name__ == "__main__":

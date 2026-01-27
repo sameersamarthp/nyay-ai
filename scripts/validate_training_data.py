@@ -23,9 +23,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.settings import settings
-from utils.logger import get_logger
+from utils.logger import get_logger, get_script_logger
 
 logger = get_logger(__name__)
+script_output = get_script_logger(__name__)
 
 
 def validate_jsonl_file(file_path: Path) -> tuple[bool, dict]:
@@ -166,79 +167,79 @@ def main():
 
     # Check files exist
     if not train_path.exists():
-        print(f"Error: {train_path} not found")
+        script_output.error(f"Error: {train_path} not found")
         sys.exit(1)
 
     if not val_path.exists():
-        print(f"Error: {val_path} not found")
+        script_output.error(f"Error: {val_path} not found")
         sys.exit(1)
 
-    print("Validating training data...")
-    print("=" * 50)
+    script_output.info("Validating training data...")
+    script_output.info("=" * 50)
 
     # Validate train.jsonl
-    print(f"\nValidating {train_path.name}...")
+    script_output.info(f"\nValidating {train_path.name}...")
     train_valid, train_stats = validate_jsonl_file(train_path)
 
-    print(f"  Total lines: {train_stats['total_lines']:,}")
-    print(f"  Valid examples: {train_stats['valid_lines']:,}")
-    print(f"  Invalid examples: {train_stats['invalid_lines']:,}")
-    print(
+    script_output.info(f"  Total lines: {train_stats['total_lines']:,}")
+    script_output.info(f"  Valid examples: {train_stats['valid_lines']:,}")
+    script_output.info(f"  Invalid examples: {train_stats['invalid_lines']:,}")
+    script_output.info(
         f"  Avg instruction length: {train_stats['avg_instruction_len']:.0f} chars"
     )
-    print(f"  Avg input length: {train_stats['avg_input_len']:.0f} chars")
-    print(f"  Avg output length: {train_stats['avg_output_len']:.0f} chars")
+    script_output.info(f"  Avg input length: {train_stats['avg_input_len']:.0f} chars")
+    script_output.info(f"  Avg output length: {train_stats['avg_output_len']:.0f} chars")
 
     if train_stats["task_types"]:
-        print(f"  Task type distribution:")
+        script_output.info(f"  Task type distribution:")
         for task, count in sorted(train_stats["task_types"].items()):
-            print(f"    {task}: {count:,}")
+            script_output.info(f"    {task}: {count:,}")
 
     if train_stats["errors"][:5]:
-        print(f"  First errors:")
+        script_output.info(f"  First errors:")
         for error in train_stats["errors"][:5]:
-            print(f"    {error}")
+            script_output.info(f"    {error}")
 
     # Validate val.jsonl
-    print(f"\nValidating {val_path.name}...")
+    script_output.info(f"\nValidating {val_path.name}...")
     val_valid, val_stats = validate_jsonl_file(val_path)
 
-    print(f"  Total lines: {val_stats['total_lines']:,}")
-    print(f"  Valid examples: {val_stats['valid_lines']:,}")
-    print(f"  Invalid examples: {val_stats['invalid_lines']:,}")
-    print(f"  Avg instruction length: {val_stats['avg_instruction_len']:.0f} chars")
-    print(f"  Avg input length: {val_stats['avg_input_len']:.0f} chars")
-    print(f"  Avg output length: {val_stats['avg_output_len']:.0f} chars")
+    script_output.info(f"  Total lines: {val_stats['total_lines']:,}")
+    script_output.info(f"  Valid examples: {val_stats['valid_lines']:,}")
+    script_output.info(f"  Invalid examples: {val_stats['invalid_lines']:,}")
+    script_output.info(f"  Avg instruction length: {val_stats['avg_instruction_len']:.0f} chars")
+    script_output.info(f"  Avg input length: {val_stats['avg_input_len']:.0f} chars")
+    script_output.info(f"  Avg output length: {val_stats['avg_output_len']:.0f} chars")
 
     if val_stats["task_types"]:
-        print(f"  Task type distribution:")
+        script_output.info(f"  Task type distribution:")
         for task, count in sorted(val_stats["task_types"].items()):
-            print(f"    {task}: {count:,}")
+            script_output.info(f"    {task}: {count:,}")
 
     # Check distribution
-    print("\nDistribution Analysis...")
+    script_output.info("\nDistribution Analysis...")
     warnings = check_distribution(train_stats, val_stats)
 
     if warnings:
-        print("  Warnings:")
+        script_output.info("  Warnings:")
         for warning in warnings:
-            print(f"    - {warning}")
+            script_output.info(f"    - {warning}")
     else:
-        print("  Distribution looks good!")
+        script_output.info("  Distribution looks good!")
 
     # Summary
-    print("\n" + "=" * 50)
+    script_output.info("\n" + "=" * 50)
     total_examples = train_stats["valid_lines"] + val_stats["valid_lines"]
-    print(f"Total valid examples: {total_examples:,}")
-    print(f"Train: {train_stats['valid_lines']:,}")
-    print(f"Val: {val_stats['valid_lines']:,}")
+    script_output.info(f"Total valid examples: {total_examples:,}")
+    script_output.info(f"Train: {train_stats['valid_lines']:,}")
+    script_output.info(f"Val: {val_stats['valid_lines']:,}")
 
     all_valid = train_valid and val_valid and not warnings
     if all_valid:
-        print("\nValidation PASSED")
+        script_output.info("\nValidation PASSED")
         sys.exit(0)
     else:
-        print("\nValidation FAILED - see errors above")
+        script_output.info("\nValidation FAILED - see errors above")
         sys.exit(1)
 
 

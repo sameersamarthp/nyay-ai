@@ -32,9 +32,10 @@ from scrapers import (
     HighCourtsScraper,
     IndiaCodeScraper,
 )
-from utils.logger import setup_root_logger, get_logger
+from utils.logger import setup_root_logger, get_logger, get_script_logger
 
 logger = get_logger(__name__)
+script_output = get_script_logger(__name__)
 
 
 def get_scraper(
@@ -263,14 +264,14 @@ Examples:
     if args.stats:
         store = DocumentStore()
         stats = store.get_stats()
-        print("\nCollection Statistics:")
-        print(f"  Total documents: {stats['total_documents']}")
-        print("\n  By source:")
+        script_output.info("\nCollection Statistics:")
+        script_output.info(f"  Total documents: {stats['total_documents']}")
+        script_output.info("\n  By source:")
         for source, count in stats["by_source"].items():
-            print(f"    {source}: {count}")
-        print("\n  By court:")
+            script_output.info(f"    {source}: {count}")
+        script_output.info("\n  By court:")
         for court, count in sorted(stats["by_court"].items(), key=lambda x: -x[1])[:10]:
-            print(f"    {court}: {count}")
+            script_output.info(f"    {court}: {count}")
         return
 
     # Determine use_api from mode

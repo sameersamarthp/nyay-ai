@@ -16,40 +16,43 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from storage.aws_document_store import AWSDocumentStore
+from utils.logger import get_script_logger
+
+script_output = get_script_logger(__name__)
 
 
 def display_example_for_review(example: dict, source_doc: str):
     """Display an example alongside source document for review."""
-    print("\n" + "=" * 80)
-    print(f"CNR: {example['metadata']['cnr']}")
-    print(f"Task Type: {example['metadata']['task_type']}")
-    print("=" * 80)
+    script_output.info("\n" + "=" * 80)
+    script_output.info(f"CNR: {example['metadata']['cnr']}")
+    script_output.info(f"Task Type: {example['metadata']['task_type']}")
+    script_output.info("=" * 80)
 
-    print("\n📄 SOURCE DOCUMENT (First 3000 chars):")
-    print("-" * 80)
-    print(source_doc[:3000])
+    script_output.info("\n📄 SOURCE DOCUMENT (First 3000 chars):")
+    script_output.info("-" * 80)
+    script_output.info(source_doc[:3000])
     if len(source_doc) > 3000:
-        print(f"\n... [truncated, {len(source_doc) - 3000} more chars]")
+        script_output.info(f"\n... [truncated, {len(source_doc) - 3000} more chars]")
 
-    print("\n" + "=" * 80)
-    print("📝 INSTRUCTION:")
-    print("-" * 80)
-    print(example['instruction'])
+    script_output.info("\n" + "=" * 80)
+    script_output.info("📝 INSTRUCTION:")
+    script_output.info("-" * 80)
+    script_output.info(example['instruction'])
 
-    print("\n" + "=" * 80)
-    print("🤖 GENERATED OUTPUT:")
-    print("-" * 80)
-    print(example['output'])
+    script_output.info("\n" + "=" * 80)
+    script_output.info("🤖 GENERATED OUTPUT:")
+    script_output.info("-" * 80)
+    script_output.info(example['output'])
 
-    print("\n" + "=" * 80)
-    print("🔍 REVIEW CHECKLIST:")
-    print("-" * 80)
-    print("1. [ ] Factually accurate (check dates, parties, outcomes)")
-    print("2. [ ] Legally sound (correct interpretation of law)")
-    print("3. [ ] No hallucination (all facts from source document)")
-    print("4. [ ] Clear and well-structured")
-    print("5. [ ] Appropriate length and detail")
-    print("=" * 80)
+    script_output.info("\n" + "=" * 80)
+    script_output.info("🔍 REVIEW CHECKLIST:")
+    script_output.info("-" * 80)
+    script_output.info("1. [ ] Factually accurate (check dates, parties, outcomes)")
+    script_output.info("2. [ ] Legally sound (correct interpretation of law)")
+    script_output.info("3. [ ] No hallucination (all facts from source document)")
+    script_output.info("4. [ ] Clear and well-structured")
+    script_output.info("5. [ ] Appropriate length and detail")
+    script_output.info("=" * 80)
 
 
 def main():
@@ -84,13 +87,13 @@ def main():
         with open("data/training/val.jsonl", "r") as f:
             examples.extend([json.loads(line) for line in f])
 
-    print(f"Loaded {len(examples)} examples")
+    script_output.info(f"Loaded {len(examples)} examples")
 
     # Filter by CNR if specified
     if args.cnr:
         examples = [ex for ex in examples if ex['metadata']['cnr'] == args.cnr]
         if not examples:
-            print(f"No examples found for CNR: {args.cnr}")
+            script_output.info(f"No examples found for CNR: {args.cnr}")
             return
     else:
         # Random sample
@@ -99,18 +102,18 @@ def main():
     # Load source documents
     store = AWSDocumentStore()
 
-    print(f"\nReviewing {len(examples)} examples...")
+    script_output.info(f"\nReviewing {len(examples)} examples...")
 
     for i, example in enumerate(examples, 1):
         cnr = example['metadata']['cnr']
         doc = store.get_document(cnr)
 
         if not doc or not doc.full_text:
-            print(f"\nSkipping {cnr} - no source document found")
+            script_output.info(f"\nSkipping {cnr} - no source document found")
             continue
 
-        print(f"\n\n{'='*80}")
-        print(f"EXAMPLE {i} of {len(examples)}")
+        script_output.info(f"\n\n{'='*80}")
+        script_output.info(f"EXAMPLE {i} of {len(examples)}")
         display_example_for_review(example, doc.full_text)
 
         if i < len(examples):

@@ -16,7 +16,14 @@ Usage:
 
 import argparse
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from utils.logger import get_script_logger
+
+script_output = get_script_logger(__name__)
 
 
 def filter_examples(input_file: Path, remove_cnrs: set[str], output_file: Path) -> None:
@@ -37,17 +44,17 @@ def filter_examples(input_file: Path, remove_cnrs: set[str], output_file: Path) 
 
             if cnr in remove_cnrs:
                 removed += 1
-                print(f"Removing: {cnr} ({example['metadata']['task_type']})")
+                script_output.info(f"Removing: {cnr} ({example['metadata']['task_type']})")
             else:
                 fout.write(line)
                 kept += 1
 
-    print(f"\n{'='*60}")
-    print(f"Filtering complete:")
-    print(f"  Kept: {kept}")
-    print(f"  Removed: {removed}")
-    print(f"  Output: {output_file}")
-    print(f"{'='*60}")
+    script_output.info(f"\n{'='*60}")
+    script_output.info(f"Filtering complete:")
+    script_output.info(f"  Kept: {kept}")
+    script_output.info(f"  Removed: {removed}")
+    script_output.info(f"  Output: {output_file}")
+    script_output.info(f"{'='*60}")
 
 
 def main():
@@ -77,7 +84,7 @@ def main():
     with open(args.remove, "r") as f:
         remove_cnrs = set(line.strip() for line in f if line.strip())
 
-    print(f"Loaded {len(remove_cnrs)} CNRs to remove")
+    script_output.info(f"Loaded {len(remove_cnrs)} CNRs to remove")
 
     # Filter
     filter_examples(args.input, remove_cnrs, args.output)

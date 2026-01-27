@@ -18,6 +18,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from storage.aws_document_store import AWSDocumentStore
+from utils.logger import get_script_logger
+
+script_output = get_script_logger(__name__)
 
 
 class ReviewSession:

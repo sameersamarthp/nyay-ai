@@ -26,9 +26,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from processors.pdf_extractor import TarPDFExtractor, find_tar_files, get_tar_pdf_count
 from storage.aws_document_store import AWSDocumentStore
 from storage.aws_schemas import AWSProcessingProgress
-from utils.logger import get_logger
+from utils.logger import get_logger, get_script_logger
 
 logger = get_logger(__name__)
+script_output = get_script_logger(__name__)
 
 # Global flag for graceful shutdown
 shutdown_requested = False
@@ -38,9 +39,9 @@ def signal_handler(signum, frame):
     """Handle Ctrl+C gracefully."""
     global shutdown_requested
     if shutdown_requested:
-        print("\nForce quitting...")
+        script_output.info("\nForce quitting...")
         sys.exit(1)
-    print("\nShutdown requested. Finishing current batch...")
+    script_output.info("\nShutdown requested. Finishing current batch...")
     shutdown_requested = True
 
 
@@ -211,18 +212,18 @@ def main():
 
     if not tar_files:
         logger.error(f"No tar files found in {args.tar_dir}")
-        print("\nMake sure to download the tar files first:")
-        print("  aws s3 sync s3://indian-high-court-judgments/data/tar/year=2025/court=7_26/bench=dhcdb ./data/aws_data/tar/year=2025/court=7_26/bench=dhcdb --no-sign-request")
+        script_output.info("\nMake sure to download the tar files first:")
+        script_output.info("  aws s3 sync s3://indian-high-court-judgments/data/tar/year=2025/court=7_26/bench=dhcdb ./data/aws_data/tar/year=2025/court=7_26/bench=dhcdb --no-sign-request")
         sys.exit(1)
 
     logger.info(f"Found {len(tar_files)} tar files to process")
 
     if args.dry_run:
-        print("\nDry run - would process the following tar files:")
+        script_output.info("\nDry run - would process the following tar files:")
         for tar_path in tar_files:
             pdf_count = get_tar_pdf_count(tar_path)
             court_code, bench, year = extract_court_bench_from_path(tar_path)
-            print(f"  {tar_path.name}: {pdf_count} PDFs (court={court_code}, bench={bench}, year={year})")
+            script_output.info(f"  {tar_path.name}: {pdf_count} PDFs (court={court_code}, bench={bench}, year={year})")
         return
 
     # Initialize store
@@ -275,22 +276,22 @@ def main():
             store.save_progress(progress)
 
     # Print summary
-    print("\n" + "=" * 50)
-    print("PROCESSING COMPLETE" if not shutdown_requested else "PROCESSING INTERRUPTED")
-    print("=" * 50)
-    print(f"Total PDFs processed: {total_processed:,}")
-    print(f"Successful extractions: {total_success:,}")
-    print(f"Failed extractions: {total_processed - total_success:,}")
+    script_output.info("\n" + "=" * 50)
+    script_output.info("PROCESSING COMPLETE" if not shutdown_requested else "PROCESSING INTERRUPTED")
+    script_output.info("=" * 50)
+    script_output.info(f"Total PDFs processed: {total_processed:,}")
+    script_output.info(f"Successful extractions: {total_success:,}")
+    script_output.info(f"Failed extractions: {total_processed - total_success:,}")
 
     # Show stats
     stats = store.get_stats()
-    print(f"\nDatabase statistics:")
-    print(f"  Total documents: {stats['total_documents']:,}")
-    print(f"  With full text: {stats['processed_documents']:,}")
-    print(f"  Without full text: {stats['unprocessed_documents']:,}")
+    script_output.info(f"\nDatabase statistics:")
+    script_output.info(f"  Total documents: {stats['total_documents']:,}")
+    script_output.info(f"  With full text: {stats['processed_documents']:,}")
+    script_output.info(f"  Without full text: {stats['unprocessed_documents']:,}")
 
     if shutdown_requested:
-        print("\nProgress saved. Run with --resume to continue.")
+        script_output.info("\nProgress saved. Run with --resume to continue.")
 
 
 if __name__ == "__main__":
