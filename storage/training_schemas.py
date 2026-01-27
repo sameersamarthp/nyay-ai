@@ -2,8 +2,9 @@
 Pydantic schemas for training data generation.
 """
 
+import json
 from datetime import datetime
-from typing import Self
+from typing import Any, Self
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -23,7 +24,7 @@ class TrainingExample(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
 
-    def to_jsonl_dict(self) -> dict:
+    def to_jsonl_dict(self) -> dict[str, Any]:
         """Convert to JSONL format for training."""
         return {
             "instruction": self.instruction,
@@ -35,14 +36,14 @@ class TrainingExample(BaseModel):
             },
         }
 
-    def to_db_dict(self) -> dict:
+    def to_db_dict(self) -> dict[str, Any]:
         """Convert to dict for database storage."""
         data = self.model_dump()
         data["created_at"] = data["created_at"].isoformat()
         return data
 
     @classmethod
-    def from_db_dict(cls, data: dict) -> Self:
+    def from_db_dict(cls, data: dict[str, Any]) -> Self:
         """Create from database dict."""
         if isinstance(data.get("created_at"), str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
@@ -63,22 +64,17 @@ class TrainingProgress(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
 
-    def to_db_dict(self) -> dict:
+    def to_db_dict(self) -> dict[str, Any]:
         """Convert to dict for database storage."""
         data = self.model_dump()
         data["created_at"] = data["created_at"].isoformat()
         data["updated_at"] = data["updated_at"].isoformat()
-        # Store task_types as JSON string
-        import json
-
         data["task_types_generated"] = json.dumps(data["task_types_generated"])
         return data
 
     @classmethod
-    def from_db_dict(cls, data: dict) -> Self:
+    def from_db_dict(cls, data: dict[str, Any]) -> Self:
         """Create from database dict."""
-        import json
-
         if isinstance(data.get("created_at"), str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
         if isinstance(data.get("updated_at"), str):
@@ -101,12 +97,10 @@ class TrainingRunMetadata(BaseModel):
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     estimated_cost: float = 0.0
-    config_snapshot: dict = Field(default_factory=dict)
+    config_snapshot: dict[str, Any] = Field(default_factory=dict)
 
-    def to_db_dict(self) -> dict:
+    def to_db_dict(self) -> dict[str, Any]:
         """Convert to dict for database storage."""
-        import json
-
         data = self.model_dump()
         data["started_at"] = data["started_at"].isoformat()
         if data["completed_at"]:
@@ -115,10 +109,8 @@ class TrainingRunMetadata(BaseModel):
         return data
 
     @classmethod
-    def from_db_dict(cls, data: dict) -> Self:
+    def from_db_dict(cls, data: dict[str, Any]) -> Self:
         """Create from database dict."""
-        import json
-
         if isinstance(data.get("started_at"), str):
             data["started_at"] = datetime.fromisoformat(data["started_at"])
         if data.get("completed_at") and isinstance(data["completed_at"], str):

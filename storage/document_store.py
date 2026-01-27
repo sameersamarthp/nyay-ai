@@ -8,6 +8,7 @@ Thread-safe for concurrent access.
 import json
 import threading
 from pathlib import Path
+from typing import Any
 from sqlite_utils import Database
 
 from config.settings import settings
@@ -255,7 +256,7 @@ class DocumentStore:
             result[progress.source] = progress
         return result
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """Get storage statistics."""
         stats = {
             "total_documents": self.db["documents"].count,

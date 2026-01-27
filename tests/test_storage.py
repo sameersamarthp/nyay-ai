@@ -96,28 +96,22 @@ class TestDocumentStore:
     """Tests for DocumentStore."""
 
     @pytest.fixture
-    def temp_store(self):
+    def temp_store(self, monkeypatch):
         """Create a temporary document store."""
+        from config.settings import settings
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
             db_path = tmpdir_path / "test.db"
-            # Temporarily override settings
-            from config.settings import settings
-            original_db = settings.DB_PATH
-            original_raw = settings.RAW_DATA_DIR
-            original_project_root = settings.PROJECT_ROOT
 
-            settings.DB_PATH = db_path
-            settings.RAW_DATA_DIR = tmpdir_path / "raw"
-            settings.PROJECT_ROOT = tmpdir_path
+            # Use monkeypatch for clean settings override
+            monkeypatch.setattr(settings, "DB_PATH", db_path)
+            monkeypatch.setattr(settings, "RAW_DATA_DIR", tmpdir_path / "raw")
+            monkeypatch.setattr(settings, "PROJECT_ROOT", tmpdir_path)
 
             store = DocumentStore(db_path=db_path)
             yield store
-
-            # Restore settings
-            settings.DB_PATH = original_db
-            settings.RAW_DATA_DIR = original_raw
-            settings.PROJECT_ROOT = original_project_root
+            # monkeypatch automatically restores original values
 
     def test_save_and_retrieve(self, temp_store):
         """Test saving and retrieving a document."""

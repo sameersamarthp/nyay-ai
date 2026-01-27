@@ -180,11 +180,11 @@ class TarPDFExtractor:
             logger.error(f"Error extracting {pdf_filename} from tar: {e}")
             return None
 
-    def iter_pdfs(self) -> "TarPDFIterator":
+    def iter_pdfs(self):
         """Iterate over all PDFs, yielding (cnr, text) tuples.
 
         Yields:
-            Tuple of (cnr, extracted_text) for each PDF.
+            tuple[str, str | None]: Tuple of (cnr, extracted_text) for each PDF.
         """
         if not self._tar_file:
             raise RuntimeError("TarPDFExtractor must be used as context manager")
@@ -212,13 +212,6 @@ class TarPDFExtractor:
             except Exception as e:
                 logger.error(f"Error processing {member.name}: {e}")
                 yield cnr, None
-
-
-class TarPDFIterator:
-    """Iterator for PDFs in a tar archive."""
-
-    def __init__(self, extractor: TarPDFExtractor):
-        self.extractor = extractor
 
 
 def find_tar_files(base_path: Path, court_code: str | None = None, bench: str | None = None) -> list[Path]:

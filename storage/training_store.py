@@ -5,6 +5,7 @@ Storage for training data generation progress and examples.
 import json
 import threading
 from pathlib import Path
+from typing import Any
 
 from sqlite_utils import Database
 
@@ -254,7 +255,7 @@ class TrainingStore:
         return train_path, val_path
 
     # Statistics
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """Get training generation statistics."""
         progress_stats = {}
         for status in ["pending", "in_progress", "completed", "failed", "skipped"]:

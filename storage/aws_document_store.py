@@ -7,6 +7,7 @@ Optimized for bulk inserts and PDF processing updates.
 
 import threading
 from pathlib import Path
+from typing import Any
 
 from sqlite_utils import Database
 
@@ -293,7 +294,7 @@ class AWSDocumentStore:
             return None
         return AWSProcessingProgress.from_dict(rows[0])
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """Get storage statistics."""
         stats = {
             "total_documents": self.db["aws_documents"].count,
