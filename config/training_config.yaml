@@ -1,0 +1,112 @@
+# Phase 3: QLoRA 8-bit Training Configuration for Llama 3.2 3B
+# Optimized for MacBook Pro M2, 32GB RAM
+
+# Model Configuration
+model:
+  name: "llama-3.2-3b-instruct"
+  path: "./models/llama-3.2-3b-instruct-mlx"
+
+# LoRA Configuration (QLoRA 8-bit)
+lora:
+  rank: 16                    # LoRA rank (higher = more capacity, more memory)
+  alpha: 32                   # LoRA alpha (typically 2x rank)
+  dropout: 0.05               # Dropout for regularization
+  target_modules:             # Which layers to apply LoRA
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  quantization:
+    bits: 8                   # 8-bit quantization (QLoRA)
+    group_size: 64            # Quantization group size
+
+# Training Hyperparameters
+training:
+  # Data
+  train_data: "./data/training/train.jsonl"
+  val_data: "./data/training/val.jsonl"
+  max_seq_length: 2048        # Maximum sequence length
+
+  # Optimization
+  learning_rate: 2.0e-4       # Learning rate (typical for LoRA)
+  batch_size: 1               # Per-device batch size (1 for 32GB RAM)
+  gradient_accumulation_steps: 8  # Effective batch size = 8
+  max_steps: 3000             # Total training steps (~3-4 epochs)
+  warmup_steps: 100           # Warmup steps
+  weight_decay: 0.01          # Weight decay for regularization
+
+  # Learning rate schedule
+  lr_scheduler: "cosine"      # cosine, linear, constant
+
+  # Gradient clipping
+  max_grad_norm: 1.0          # Gradient clipping
+
+  # Mixed precision
+  fp16: false                 # FP16 not needed with MLX
+  bf16: false                 # BF16 not needed with MLX
+
+# Evaluation
+evaluation:
+  eval_steps: 100             # Evaluate every N steps
+  eval_batch_size: 2          # Batch size for evaluation
+  save_steps: 500             # Save checkpoint every N steps
+  logging_steps: 10           # Log metrics every N steps
+
+  # Early stopping
+  early_stopping: true
+  early_stopping_patience: 5  # Stop if no improvement for N evals
+  early_stopping_threshold: 0.01  # Minimum improvement threshold
+
+# Checkpointing
+checkpointing:
+  output_dir: "./models/nyay-ai-checkpoints"
+  save_total_limit: 3         # Keep only last 3 checkpoints
+  save_best_only: true        # Save only best checkpoint
+  metric_for_best: "eval_loss"  # Metric to determine best checkpoint
+
+# System Prompts for Legal AI
+system_prompts:
+  default: |
+    You are Nyay AI, an expert Indian legal assistant. You provide accurate,
+    helpful information about Indian law based on court judgments and legal precedents.
+    Always cite specific laws, sections, and cases when relevant. Be precise and factual.
+
+  summarization: |
+    You are a legal document analyst. Summarize Indian court judgments accurately,
+    covering case background, legal issues, court's analysis, and verdict.
+
+  research_qa: |
+    You are a legal research assistant. Answer questions about Indian law based on
+    court judgments. Cite specific sections, acts, and precedents from the source.
+
+  outcome_analysis: |
+    You are a legal outcome analyst. Explain why courts reach particular decisions,
+    focusing on decisive factors, legal provisions, and precedents.
+
+  info_extraction: |
+    You are a legal information extractor. Extract structured information from
+    judgments including parties, statutes, precedents, and relief sought/granted.
+
+# Logging
+logging:
+  log_dir: "./logs/training"
+  tensorboard: false          # TensorBoard logging (optional)
+  wandb: false                # W&B logging (optional)
+
+# Hardware
+hardware:
+  device: "mps"               # Metal Performance Shaders (Apple Silicon)
+  num_workers: 4              # Data loading workers
+  pin_memory: true            # Pin memory for faster transfer
+
+# Seed for reproducibility
+seed: 42
+
+# Notes:
+# - Effective batch size: batch_size * gradient_accumulation_steps = 8
+# - Memory usage: ~8 GB with these settings
+# - Training time: ~4-8 hours for 3000 steps on M2
+# - Total parameters trained: ~8M (0.3% of 3B)

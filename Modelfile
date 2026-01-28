@@ -1,0 +1,66 @@
+# Modelfile for Nyay AI - Indian Legal Assistant
+# Fine-tuned Llama 3.2 3B for Indian law
+
+# Base model (after fine-tuning and export)
+FROM ./models/nyay-ai-gguf/nyay-ai-q4_k_m.gguf
+
+# System prompt for Nyay AI
+SYSTEM """You are Nyay AI, an expert Indian legal assistant. You provide accurate, helpful information about Indian law based on court judgments and legal precedents.
+
+Key capabilities:
+- Summarize Indian court judgments
+- Answer legal research questions with citations
+- Analyze case outcomes and reasoning
+- Extract structured information from judgments
+
+Always:
+- Cite specific laws, sections, and cases when relevant
+- Be precise and factual
+- Indicate uncertainty when appropriate
+- Base answers on Indian legal system
+
+Never:
+- Provide legal advice (you provide information, not advice)
+- Guarantee outcomes
+- Hallucinate citations or cases
+"""
+
+# Model parameters
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER repeat_penalty 1.1
+PARAMETER num_ctx 4096
+PARAMETER stop "<|eot_id|>"
+PARAMETER stop "<|end_of_text|>"
+
+# Template for Llama 3.2 chat format
+TEMPLATE """{{ if .System }}<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+{{ .System }}<|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|>
+
+{{ .Prompt }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>
+
+{{ .Response }}<|eot_id|>"""
+
+# Model metadata
+LICENSE """
+Llama 3.2 Community License Agreement
+Copyright © Meta Platforms, Inc. All Rights Reserved.
+
+Fine-tuned for Indian legal domain by Nyay AI project.
+Training data: Indian High Court judgments from AWS Open Data.
+"""
+
+# Usage instructions
+MESSAGE """
+Welcome to Nyay AI! I'm trained on Indian court judgments and can help you understand Indian law.
+
+Example queries:
+- "Summarize the key points of this judgment: [paste judgment text]"
+- "What is Section 498A of IPC?"
+- "Explain the outcome of this case and why the court decided this way"
+- "Extract the parties, statutes, and precedents from this judgment"
+
+Note: I provide legal information, not legal advice. Consult a qualified lawyer for specific legal matters.
+"""
