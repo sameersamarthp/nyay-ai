@@ -1,0 +1,43 @@
+# MLX-LM LoRA Fine-tuning Configuration
+# For use with: mlx_lm.lora --config config/mlx_lora_config.yaml --train
+
+# Model settings
+model: "./models/llama-3.2-3b-instruct-mlx"
+
+# Data settings
+data: "./data/training"  # Directory with train.jsonl and val.jsonl (MLX format)
+
+# Fine-tuning type
+fine_tune_type: "lora"
+
+# LoRA parameters (implicit in lora layers, ranks set via num-layers)
+num_layers: -1  # -1 = all layers
+
+# Training hyperparameters
+batch_size: 1
+iters: 3000
+learning_rate: 0.0002
+grad_accumulation_steps: 8
+
+# Evaluation
+val_batches: 100  # Limit validation batches to reduce memory (was -1 = all)
+steps_per_eval: 500
+steps_per_report: 50
+
+# Checkpointing
+adapter_path: "./models/nyay-ai-checkpoints"
+save_every: 1000
+
+# Sequence length (4096 causes OOM, 3072 also OOM, using safe 2048)
+max_seq_length: 2048
+
+# Optimizer
+optimizer: "adamw"
+
+# Reproducibility
+seed: 42
+
+# Optional: Gradient checkpointing (reduces memory, slower)
+# grad_checkpoint: true
+
+# Test mode settings (override with --iters 20 --batch-size 1)
