@@ -154,7 +154,7 @@ def generate_samples(
             tokenizer,
             prompt=prompt,
             max_tokens=max_tokens,
-            temp=0.7,
+            temperature=0.7,
             verbose=False
         )
 
