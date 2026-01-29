@@ -15,7 +15,7 @@ num_layers: -1  # -1 = all layers
 
 # Training hyperparameters
 batch_size: 1
-iters: 2500  # Adjusted: 500 already done + 2500 new = 3000 total
+iters: 1500  # Train 1500 more (1500 done + 1500 = 3000 total cumulative)
 learning_rate: 0.00002  # FIXED: was 0.0002 which caused gradient explosion
 grad_accumulation_steps: 8
 
@@ -25,9 +25,9 @@ steps_per_eval: 500
 steps_per_report: 50
 
 # Checkpointing
-adapter_path: "./models/nyay-ai-checkpoints-v3"  # New path to preserve v2 checkpoint 500
+adapter_path: "./models/nyay-ai-checkpoints-v4"  # v4 to avoid overwriting v3 checkpoints
 save_every: 500  # Save more frequently
-resume_adapter_file: "./models/nyay-ai-checkpoints-v2/0000500_adapters.safetensors"  # Resume from iteration 500
+resume_adapter_file: "./models/nyay-ai-checkpoints-v3/0001500_adapters.safetensors"  # Resume from cumulative iter 1500
 
 # Sequence length (4096 causes OOM, 3072 also OOM, using safe 2048)
 max_seq_length: 2048
