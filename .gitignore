@@ -1,6 +1,7 @@
 # Data directories (large, regeneratable)
 data/
 logs/
+models/
 
 # db file
 metadata.db

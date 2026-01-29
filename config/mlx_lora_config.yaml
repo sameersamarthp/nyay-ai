@@ -16,7 +16,7 @@ num_layers: -1  # -1 = all layers
 # Training hyperparameters
 batch_size: 1
 iters: 3000
-learning_rate: 0.0002
+learning_rate: 0.00002  # FIXED: was 0.0002 which caused gradient explosion
 grad_accumulation_steps: 8
 
 # Evaluation
@@ -25,8 +25,8 @@ steps_per_eval: 500
 steps_per_report: 50
 
 # Checkpointing
-adapter_path: "./models/nyay-ai-checkpoints"
-save_every: 1000
+adapter_path: "./models/nyay-ai-checkpoints-v2"  # New path for fixed training
+save_every: 500  # Save more frequently
 
 # Sequence length (4096 causes OOM, 3072 also OOM, using safe 2048)
 max_seq_length: 2048
