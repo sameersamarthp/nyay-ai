@@ -11,7 +11,7 @@ A privacy-first, locally-runnable AI assistant specialized in Indian law, built 
 
 ---
 
-## 🎯 Purpose & Overview
+## Purpose & Overview
 
 **The Problem**: General-purpose AI models like ChatGPT or Claude struggle with India-specific legal queries. They often:
 - Cite incorrect jurisdictions (e.g., stating Magistrates can quash FIRs when only High Courts can)
@@ -39,9 +39,9 @@ A privacy-first, locally-runnable AI assistant specialized in Indian law, built 
 
 ---
 
-## 🚀 Why Nyay AI is Different
+## Why Nyay AI is Different
 
-### 1. 🔒 **Privacy First**
+### 1. **Privacy First**
 
 Unlike ChatGPT, Claude, or other cloud AI services:
 
@@ -55,7 +55,7 @@ Unlike ChatGPT, Claude, or other cloud AI services:
 
 **Why it matters**: Legal queries often involve sensitive client information, pending cases, or confidential matters. With Nyay AI, your queries remain completely private.
 
-### 2. ⚡ **Local Inference**
+### 2. **Local Inference**
 
 Nyay AI runs entirely on your machine using **Ollama**:
 - **Zero latency from network calls** - responses in seconds, not minutes
@@ -68,7 +68,7 @@ Nyay AI runs entirely on your machine using **Ollama**:
 - **Memory**: ~3 GB RAM during inference
 - **Model Size**: 2 GB on disk
 
-### 3. 📦 **Quantization - Quality Meets Efficiency**
+### 3. **Quantization - Quality Meets Efficiency**
 
 We use **Q4_K_M quantization** (4-bit) to compress the model from 6 GB to 2 GB:
 
@@ -87,7 +87,7 @@ We use **Q4_K_M quantization** (4-bit) to compress the model from 6 GB to 2 GB:
 
 **Real-world impact**: You can run a high-quality legal AI on a MacBook Air without sacrificing accuracy.
 
-### 4. 🎓 **Fine-Tuned on Real Data**
+### 4. **Fine-Tuned on Real Data**
 
 Unlike general models, Nyay AI was trained on:
 - **58,222 real court judgments** from Delhi and Bombay High Courts
@@ -104,7 +104,7 @@ Unlike general models, Nyay AI was trained on:
 
 ---
 
-## 📊 Major Achievements
+## Major Achievements
 
 ### Performance Comparison: Nyay AI vs Base Llama 3.2 3B
 
@@ -177,7 +177,7 @@ This demonstrates how **Nyay AI's fine-tuning on real judgments prevents critica
 
 ---
 
-## 🛠️ Quick Start Guide
+## Quick Start Guide
 
 ### Prerequisites
 
@@ -215,7 +215,7 @@ curl http://localhost:11434/api/generate -d '{
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/nyay-ai.git
+git clone https://github.com/sameersamarthp/nyay-ai.git
 cd nyay-ai
 
 # 2. Setup data collection environment
@@ -276,7 +276,7 @@ bash scripts/convert_mlx_to_gguf.sh
 
 ---
 
-## 📖 Usage Examples
+## Usage Examples
 
 ### Interactive Chat
 
@@ -343,7 +343,7 @@ print(response.json()['response'])
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 nyay-ai/
@@ -368,7 +368,7 @@ nyay-ai/
 
 ---
 
-## 🔧 Technical Stack
+## Technical Stack
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -383,7 +383,7 @@ nyay-ai/
 
 ---
 
-## 📈 Roadmap (Phase 4)
+## Roadmap (Phase 4)
 
 Current limitations and planned improvements:
 
@@ -414,7 +414,7 @@ Current limitations and planned improvements:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -426,7 +426,7 @@ Current limitations and planned improvements:
 
 ---
 
-## ⚠️ Limitations & Disclaimers
+## Limitations & Disclaimers
 
 ### Technical Limitations
 
@@ -464,7 +464,7 @@ Current limitations and planned improvements:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Areas where help is needed:
 
@@ -478,7 +478,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
@@ -486,7 +486,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Data Source**: [AWS Open Data - Indian High Court Judgments](https://registry.opendata.aws/indian-high-court-judgments/)
 - **Base Model**: Meta's Llama 3.2 3B via [mlx-community](https://huggingface.co/mlx-community)
@@ -496,10 +496,9 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ---
 
-## 📞 Contact & Support
+## Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/nyay-ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/nyay-ai/discussions)
+- **Issues**: [GitHub Issues](https://github.com/sameersamarthp/nyay-ai/issues)
 - **Email**: sameersamarthp@gmail.com
 
 ---
