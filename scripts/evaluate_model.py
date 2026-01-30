@@ -1,349 +1,440 @@
 #!/usr/bin/env python3
 """
-Evaluate fine-tuned Nyay AI model.
+Nyay AI Model Evaluation Script
 
-This script:
-1. Loads the fine-tuned model
-2. Runs evaluation on validation set
-3. Generates sample outputs for manual review
-4. Computes metrics (loss, perplexity, accuracy)
+Evaluates the fine-tuned model on diverse legal test cases and generates
+comprehensive metrics including accuracy, hallucination rate, and quality scores.
 
 Usage:
-    python scripts/evaluate_model.py
-    python scripts/evaluate_model.py --checkpoint models/nyay-ai-checkpoints/checkpoint-3000
-    python scripts/evaluate_model.py --samples 10  # Generate 10 sample outputs
+    python scripts/evaluate_model.py --checkpoint models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors
+    python scripts/evaluate_model.py --checkpoint models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors --interactive
 """
 
 import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Dict
+from datetime import datetime
+from typing import Dict, List, Tuple
+import re
 
-import mlx.core as mx
-import numpy as np
-import yaml
-from mlx_lm import generate, load
-from tqdm import tqdm
-
+# Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.logger import get_logger, get_script_logger
-
-logger = get_logger(__name__)
-script_output = get_script_logger(__name__)
+from mlx_lm import load, generate
 
 
-def load_config(config_path: Path) -> dict:
-    """Load training configuration."""
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+class LegalModelEvaluator:
+    """Evaluates fine-tuned legal AI model on test cases"""
 
+    def __init__(self, base_model_path: str, checkpoint_path: str):
+        """Initialize evaluator with model paths"""
+        self.base_model_path = base_model_path
+        self.checkpoint_path = checkpoint_path
+        self.model = None
+        self.tokenizer = None
 
-def load_dataset(data_path: Path, max_samples: int = None) -> List[dict]:
-    """Load dataset from JSONL file."""
-    examples = []
-    with open(data_path) as f:
-        for i, line in enumerate(f):
-            if max_samples and i >= max_samples:
-                break
-            examples.append(json.loads(line))
-    return examples
+        # Evaluation results
+        self.results = []
+        self.metrics = {}
 
+    def load_model(self):
+        """Load base model and fine-tuned checkpoint"""
+        print("="*70)
+        print("LOADING MODEL")
+        print("="*70)
+        print(f"Base model: {self.base_model_path}")
+        print(f"Checkpoint: {self.checkpoint_path}")
+        print()
 
-def evaluate_perplexity(model, tokenizer, dataset: List[dict]) -> Dict[str, float]:
-    """Compute perplexity on validation set.
+        print("Loading base model...")
+        self.model, self.tokenizer = load(self.base_model_path)
+        print("✓ Base model loaded")
 
-    Args:
-        model: The model
-        tokenizer: Tokenizer
-        dataset: Validation dataset
+        print(f"Loading checkpoint...")
+        self.model.load_weights(self.checkpoint_path, strict=False)
+        print("✓ Checkpoint loaded")
+        print()
 
-    Returns:
-        Dictionary of metrics
-    """
-    model.eval()
+    def load_test_cases(self, test_file: str) -> List[Dict]:
+        """Load test cases from JSONL file"""
+        test_cases = []
+        with open(test_file, 'r') as f:
+            for line in f:
+                test_cases.append(json.loads(line))
+        return test_cases
 
-    total_loss = 0.0
-    total_tokens = 0
-
-    for example in tqdm(dataset, desc="Computing perplexity"):
-        messages = example["messages"]
-
-        # Tokenize
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=False
-        )
-        tokens = tokenizer.encode(text, add_special_tokens=True)
-
-        if len(tokens) < 2:
-            continue
-
-        # Prepare inputs
-        input_ids = mx.array([tokens[:-1]])
-        labels = mx.array([tokens[1:]])
-
-        # Forward pass
-        logits = model(input_ids)
-
-        # Compute loss
-        from mlx import nn
-        loss = nn.losses.cross_entropy(
-            logits[0],
-            labels[0],
-            reduction='mean'
-        )
-
-        total_loss += loss.item() * (len(tokens) - 1)
-        total_tokens += len(tokens) - 1
-
-    avg_loss = total_loss / total_tokens
-    perplexity = np.exp(avg_loss)
-
-    return {
-        "eval_loss": avg_loss,
-        "eval_perplexity": perplexity,
-        "eval_samples": len(dataset),
-        "eval_tokens": total_tokens
-    }
-
-
-def generate_samples(
-    model,
-    tokenizer,
-    dataset: List[dict],
-    num_samples: int = 5,
-    max_tokens: int = 512
-) -> List[Dict]:
-    """Generate sample outputs for manual review.
-
-    Args:
-        model: The model
-        tokenizer: Tokenizer
-        dataset: Dataset to sample from
-        num_samples: Number of samples to generate
-        max_tokens: Max tokens to generate
-
-    Returns:
-        List of examples with generated outputs
-    """
-    model.eval()
-
-    samples = []
-    indices = np.random.choice(len(dataset), min(num_samples, len(dataset)), replace=False)
-
-    for idx in tqdm(indices, desc="Generating samples"):
-        example = dataset[idx]
-        messages = example["messages"]
-
-        # Prepare input (system + user only)
-        input_messages = messages[:2]  # system + user
-
-        # Format prompt
-        prompt = tokenizer.apply_chat_template(
-            input_messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-
-        # Generate
+    def generate_response(self, prompt: str, max_tokens: int = 200) -> str:
+        """Generate response from model"""
         response = generate(
-            model,
-            tokenizer,
+            self.model,
+            self.tokenizer,
             prompt=prompt,
             max_tokens=max_tokens,
             verbose=False
         )
+        return response.strip()
 
-        samples.append({
-            "task_type": example["metadata"]["task_type"],
-            "input": input_messages[1]["content"],
-            "reference_output": messages[2]["content"],
-            "generated_output": response,
-            "metadata": example["metadata"]
-        })
+    def check_keyword_presence(self, response: str, keywords: List[str]) -> Tuple[int, int]:
+        """Check how many expected keywords are present in response"""
+        response_lower = response.lower()
+        found = 0
+        for keyword in keywords:
+            if keyword.lower() in response_lower:
+                found += 1
+        return found, len(keywords)
 
-    return samples
+    def detect_hallucination_markers(self, response: str) -> List[str]:
+        """Detect potential hallucination markers in response"""
+        markers = []
 
+        # Check for made-up case names (common hallucination)
+        if re.search(r'\b[A-Z][a-z]+ v\.? [A-Z][a-z]+\b', response):
+            # Very simplified check - would need more sophisticated validation
+            pass
 
-def compute_accuracy_metrics(samples: List[Dict]) -> Dict[str, float]:
-    """Compute accuracy metrics on generated samples.
+        # Check for specific years/dates (might be fabricated)
+        years = re.findall(r'\b(19|20)\d{2}\b', response)
+        if len(years) > 3:
+            markers.append("Multiple specific years mentioned (verify accuracy)")
 
-    Args:
-        samples: List of samples with reference and generated outputs
+        # Check for overly specific numbers
+        if re.search(r'\b\d{1,3}(,\d{3})+\b', response):
+            markers.append("Specific numbers mentioned (verify if accurate)")
 
-    Returns:
-        Dictionary of accuracy metrics
-    """
-    # Simple metrics based on length and content similarity
-    metrics = {
-        "avg_reference_length": np.mean([len(s["reference_output"]) for s in samples]),
-        "avg_generated_length": np.mean([len(s["generated_output"]) for s in samples]),
-        "num_samples": len(samples)
-    }
+        # Check for hedging language (good - shows uncertainty)
+        hedging_words = ['generally', 'typically', 'usually', 'may', 'can', 'might']
+        hedging_count = sum(1 for word in hedging_words if word in response.lower())
+        if hedging_count == 0 and len(response.split()) > 50:
+            markers.append("No hedging language (overly confident?)")
 
-    # Check for hallucination indicators
-    hallucination_keywords = [
-        "not mentioned", "not specified", "not provided",
-        "unclear", "cannot determine"
-    ]
+        return markers
 
-    hallucinations = 0
-    for sample in samples:
-        gen = sample["generated_output"].lower()
-        if any(keyword in gen for keyword in hallucination_keywords):
-            hallucinations += 1
+    def assess_quality(self, response: str, test_case: Dict) -> Dict:
+        """Assess response quality across multiple dimensions"""
+        quality = {}
 
-    metrics["hallucination_rate"] = hallucinations / len(samples) if samples else 0
+        # 1. Keyword coverage
+        found, total = self.check_keyword_presence(response, test_case.get('expected_keywords', []))
+        quality['keyword_coverage'] = found / total if total > 0 else 0
+        quality['keywords_found'] = found
+        quality['keywords_total'] = total
 
-    return metrics
+        # 2. Response length adequacy
+        words = len(response.split())
+        quality['word_count'] = words
+        quality['length_adequate'] = 30 <= words <= 300  # Reasonable length
+
+        # 3. Coherence check (basic)
+        sentences = re.split(r'[.!?]+', response)
+        quality['sentence_count'] = len([s for s in sentences if s.strip()])
+        quality['coherent'] = quality['sentence_count'] >= 2 and words > 20
+
+        # 4. Legal terminology presence
+        legal_terms = ['court', 'act', 'section', 'article', 'petition', 'jurisdiction',
+                      'constitutional', 'statute', 'law', 'rights', 'justice']
+        legal_term_count = sum(1 for term in legal_terms if term in response.lower())
+        quality['legal_terminology'] = legal_term_count >= 2
+        quality['legal_term_count'] = legal_term_count
+
+        # 5. Hallucination markers
+        quality['hallucination_markers'] = self.detect_hallucination_markers(response)
+        quality['has_hallucination_risk'] = len(quality['hallucination_markers']) > 0
+
+        # 6. Overall score (0-100)
+        score = 0
+        score += quality['keyword_coverage'] * 40  # 40% weight
+        score += (20 if quality['length_adequate'] else 0)  # 20% weight
+        score += (20 if quality['coherent'] else 0)  # 20% weight
+        score += (20 if quality['legal_terminology'] else 0)  # 20% weight
+        score -= (len(quality['hallucination_markers']) * 5)  # Penalty for hallucination risk
+
+        quality['overall_score'] = max(0, min(100, score))
+
+        return quality
+
+    def evaluate_test_case(self, test_case: Dict, interactive: bool = False) -> Dict:
+        """Evaluate a single test case"""
+        print(f"\n{'='*70}")
+        print(f"TEST CASE: {test_case['id']}")
+        print(f"Task: {test_case['task']}")
+        print(f"Difficulty: {test_case.get('difficulty', 'N/A')}")
+        print(f"{'='*70}")
+        print(f"\nPrompt: {test_case['prompt']}")
+        print(f"\nGenerating response...")
+
+        # Generate response
+        response = self.generate_response(test_case['prompt'])
+
+        print(f"\nResponse:")
+        print("-"*70)
+        print(response)
+        print("-"*70)
+
+        # Assess quality
+        quality = self.assess_quality(response, test_case)
+
+        print(f"\nAutomatic Assessment:")
+        print(f"  Keyword Coverage: {quality['keywords_found']}/{quality['keywords_total']} ({quality['keyword_coverage']*100:.1f}%)")
+        print(f"  Word Count: {quality['word_count']}")
+        print(f"  Legal Terms: {quality['legal_term_count']}")
+        print(f"  Coherent: {'✓' if quality['coherent'] else '✗'}")
+        print(f"  Hallucination Risk: {'⚠️  Yes' if quality['has_hallucination_risk'] else '✓ Low'}")
+        if quality['hallucination_markers']:
+            for marker in quality['hallucination_markers']:
+                print(f"    - {marker}")
+        print(f"  Overall Score: {quality['overall_score']:.1f}/100")
+
+        # Manual review if interactive
+        manual_score = None
+        manual_feedback = None
+
+        if interactive:
+            print(f"\n{'='*70}")
+            print("MANUAL REVIEW")
+            print(f"{'='*70}")
+            print("Rate the response (0-5):")
+            print("  5 = Excellent (accurate, complete, well-explained)")
+            print("  4 = Good (accurate, mostly complete)")
+            print("  3 = Acceptable (correct but incomplete or unclear)")
+            print("  2 = Poor (partially incorrect or confusing)")
+            print("  1 = Very Poor (mostly incorrect)")
+            print("  0 = Completely Wrong")
+
+            try:
+                manual_score = int(input("\nYour rating (0-5): ").strip())
+                manual_feedback = input("Optional feedback: ").strip()
+            except (ValueError, KeyboardInterrupt):
+                print("\nSkipping manual review")
+
+        # Compile result
+        result = {
+            'id': test_case['id'],
+            'task': test_case['task'],
+            'difficulty': test_case.get('difficulty', 'N/A'),
+            'prompt': test_case['prompt'],
+            'response': response,
+            'expected_keywords': test_case.get('expected_keywords', []),
+            'quality': quality,
+            'manual_score': manual_score,
+            'manual_feedback': manual_feedback,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        return result
+
+    def calculate_aggregate_metrics(self):
+        """Calculate aggregate metrics across all test cases"""
+        if not self.results:
+            return
+
+        # Overall statistics
+        self.metrics['total_tests'] = len(self.results)
+        self.metrics['avg_score'] = sum(r['quality']['overall_score'] for r in self.results) / len(self.results)
+        self.metrics['avg_keyword_coverage'] = sum(r['quality']['keyword_coverage'] for r in self.results) / len(self.results) * 100
+        self.metrics['avg_word_count'] = sum(r['quality']['word_count'] for r in self.results) / len(self.results)
+
+        # Success rates
+        self.metrics['coherent_rate'] = sum(1 for r in self.results if r['quality']['coherent']) / len(self.results) * 100
+        self.metrics['legal_terminology_rate'] = sum(1 for r in self.results if r['quality']['legal_terminology']) / len(self.results) * 100
+        self.metrics['hallucination_rate'] = sum(1 for r in self.results if r['quality']['has_hallucination_risk']) / len(self.results) * 100
+
+        # Score distribution
+        score_bins = {
+            'excellent': sum(1 for r in self.results if r['quality']['overall_score'] >= 80),
+            'good': sum(1 for r in self.results if 60 <= r['quality']['overall_score'] < 80),
+            'acceptable': sum(1 for r in self.results if 40 <= r['quality']['overall_score'] < 60),
+            'poor': sum(1 for r in self.results if r['quality']['overall_score'] < 40)
+        }
+        self.metrics['score_distribution'] = score_bins
+
+        # By task type
+        task_scores = {}
+        for result in self.results:
+            task = result['task']
+            if task not in task_scores:
+                task_scores[task] = []
+            task_scores[task].append(result['quality']['overall_score'])
+
+        self.metrics['by_task'] = {
+            task: {
+                'count': len(scores),
+                'avg_score': sum(scores) / len(scores)
+            }
+            for task, scores in task_scores.items()
+        }
+
+        # Manual review stats (if available)
+        manual_scores = [r['manual_score'] for r in self.results if r['manual_score'] is not None]
+        if manual_scores:
+            self.metrics['manual_review'] = {
+                'count': len(manual_scores),
+                'avg_score': sum(manual_scores) / len(manual_scores),
+                'avg_score_out_of_100': sum(manual_scores) / len(manual_scores) * 20  # Convert 0-5 to 0-100
+            }
+
+    def print_summary(self):
+        """Print evaluation summary"""
+        print("\n" + "="*70)
+        print("EVALUATION SUMMARY")
+        print("="*70)
+        print()
+
+        print(f"Total Tests: {self.metrics['total_tests']}")
+        print(f"Average Score: {self.metrics['avg_score']:.1f}/100")
+        print(f"Average Keyword Coverage: {self.metrics['avg_keyword_coverage']:.1f}%")
+        print(f"Average Response Length: {self.metrics['avg_word_count']:.0f} words")
+        print()
+
+        print("Quality Rates:")
+        print(f"  Coherent Responses: {self.metrics['coherent_rate']:.1f}%")
+        print(f"  Legal Terminology: {self.metrics['legal_terminology_rate']:.1f}%")
+        print(f"  Hallucination Risk: {self.metrics['hallucination_rate']:.1f}%")
+        print()
+
+        print("Score Distribution:")
+        dist = self.metrics['score_distribution']
+        print(f"  Excellent (≥80): {dist['excellent']} ({dist['excellent']/self.metrics['total_tests']*100:.1f}%)")
+        print(f"  Good (60-79):    {dist['good']} ({dist['good']/self.metrics['total_tests']*100:.1f}%)")
+        print(f"  Acceptable (40-59): {dist['acceptable']} ({dist['acceptable']/self.metrics['total_tests']*100:.1f}%)")
+        print(f"  Poor (<40):      {dist['poor']} ({dist['poor']/self.metrics['total_tests']*100:.1f}%)")
+        print()
+
+        print("Performance by Task:")
+        for task, stats in self.metrics['by_task'].items():
+            print(f"  {task:30s}: {stats['avg_score']:.1f}/100 ({stats['count']} tests)")
+        print()
+
+        if 'manual_review' in self.metrics:
+            mr = self.metrics['manual_review']
+            print("Manual Review:")
+            print(f"  Reviewed: {mr['count']} tests")
+            print(f"  Average: {mr['avg_score']:.1f}/5 ({mr['avg_score_out_of_100']:.1f}/100)")
+            print()
+
+        # Overall assessment
+        avg_score = self.metrics['avg_score']
+        print("Overall Assessment:")
+        if avg_score >= 75:
+            print("  ✅ EXCELLENT - Model is production-ready")
+        elif avg_score >= 60:
+            print("  ✓ GOOD - Model performs well, minor improvements possible")
+        elif avg_score >= 40:
+            print("  ⚠️  ACCEPTABLE - Model needs improvement before deployment")
+        else:
+            print("  ❌ POOR - Model requires significant retraining")
+        print()
+
+    def save_results(self, output_file: str):
+        """Save detailed results to JSON file"""
+        output_data = {
+            'checkpoint': self.checkpoint_path,
+            'evaluation_time': datetime.now().isoformat(),
+            'metrics': self.metrics,
+            'results': self.results
+        }
+
+        with open(output_file, 'w') as f:
+            json.dump(output_data, f, indent=2)
+
+        print(f"✓ Detailed results saved to: {output_file}")
+
+    def run_evaluation(self, test_file: str, interactive: bool = False, limit: int = None):
+        """Run complete evaluation"""
+        # Load model
+        self.load_model()
+
+        # Load test cases
+        print("="*70)
+        print("LOADING TEST CASES")
+        print("="*70)
+        test_cases = self.load_test_cases(test_file)
+        print(f"Loaded {len(test_cases)} test cases")
+
+        if limit:
+            test_cases = test_cases[:limit]
+            print(f"Limited to {limit} test cases")
+        print()
+
+        # Evaluate each test case
+        for i, test_case in enumerate(test_cases, 1):
+            print(f"\n{'#'*70}")
+            print(f"# TEST {i}/{len(test_cases)}")
+            print(f"{'#'*70}")
+
+            result = self.evaluate_test_case(test_case, interactive)
+            self.results.append(result)
+
+            if interactive and i < len(test_cases):
+                input("\nPress Enter to continue to next test case...")
+
+        # Calculate metrics
+        self.calculate_aggregate_metrics()
+
+        # Print summary
+        self.print_summary()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate Nyay AI model")
+    parser = argparse.ArgumentParser(description='Evaluate Nyay AI model')
     parser.add_argument(
-        "--config",
-        type=Path,
-        default=Path("config/training_config.yaml"),
-        help="Training config file"
+        '--checkpoint',
+        type=str,
+        default='models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors',
+        help='Path to checkpoint file'
     )
     parser.add_argument(
-        "--checkpoint",
-        type=Path,
-        help="Path to checkpoint (default: use base model)"
+        '--base-model',
+        type=str,
+        default='models/llama-3.2-3b-instruct-mlx',
+        help='Path to base model'
     )
     parser.add_argument(
-        "--samples",
+        '--test-file',
+        type=str,
+        default='data/evaluation/test_cases.jsonl',
+        help='Path to test cases file'
+    )
+    parser.add_argument(
+        '--output',
+        type=str,
+        default=None,
+        help='Output file for results (default: auto-generated)'
+    )
+    parser.add_argument(
+        '--interactive',
+        action='store_true',
+        help='Enable interactive mode for manual review'
+    )
+    parser.add_argument(
+        '--limit',
         type=int,
-        default=10,
-        help="Number of samples to generate for review"
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("evaluation_results.json"),
-        help="Output file for results"
-    )
-    parser.add_argument(
-        "--max-eval-samples",
-        type=int,
-        help="Max samples for perplexity evaluation (default: all)"
+        default=None,
+        help='Limit number of test cases to evaluate'
     )
 
     args = parser.parse_args()
 
-    # Load configuration
-    script_output.info("Loading configuration...")
-    config = load_config(args.config)
+    # Auto-generate output filename if not provided
+    if args.output is None:
+        checkpoint_name = Path(args.checkpoint).stem
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        args.output = f'scripts/evaluation_results/{checkpoint_name}_{timestamp}.json'
 
-    # Load model
-    script_output.info(f"Loading model...")
-    model_path = args.checkpoint if args.checkpoint else config["model"]["path"]
+    # Ensure output directory exists
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
 
-    try:
-        model, tokenizer = load(str(model_path))
-        script_output.info(f"✓ Model loaded from {model_path}")
-    except Exception as e:
-        script_output.error(f"Failed to load model: {e}")
-        return
-
-    # Load validation set
-    script_output.info("\nLoading validation set...")
-    val_path = Path(config["training"]["val_data"]).parent / "val_mlx.jsonl"
-
-    if not val_path.exists():
-        script_output.error(f"Validation data not found: {val_path}")
-        script_output.info("Run: python scripts/convert_to_mlx_format.py")
-        return
-
-    val_dataset = load_dataset(val_path, args.max_eval_samples)
-    script_output.info(f"  Loaded: {len(val_dataset):,} examples")
-
-    # Evaluate perplexity
-    script_output.info("\n" + "=" * 70)
-    script_output.info("EVALUATING PERPLEXITY")
-    script_output.info("=" * 70)
-
-    perplexity_metrics = evaluate_perplexity(model, tokenizer, val_dataset)
-
-    script_output.info(f"\nResults:")
-    script_output.info(f"  Loss: {perplexity_metrics['eval_loss']:.4f}")
-    script_output.info(f"  Perplexity: {perplexity_metrics['eval_perplexity']:.2f}")
-    script_output.info(f"  Samples: {perplexity_metrics['eval_samples']:,}")
-    script_output.info(f"  Tokens: {perplexity_metrics['eval_tokens']:,}")
-
-    # Generate samples
-    script_output.info("\n" + "=" * 70)
-    script_output.info(f"GENERATING {args.samples} SAMPLE OUTPUTS")
-    script_output.info("=" * 70)
-
-    samples = generate_samples(
-        model,
-        tokenizer,
-        val_dataset,
-        num_samples=args.samples,
-        max_tokens=config["training"].get("max_seq_length", 512)
-    )
-
-    # Compute accuracy metrics
-    accuracy_metrics = compute_accuracy_metrics(samples)
-
-    script_output.info(f"\nGeneration Metrics:")
-    script_output.info(f"  Avg reference length: {accuracy_metrics['avg_reference_length']:.0f} chars")
-    script_output.info(f"  Avg generated length: {accuracy_metrics['avg_generated_length']:.0f} chars")
-    script_output.info(f"  Hallucination rate: {accuracy_metrics['hallucination_rate']:.1%}")
-
-    # Display samples
-    script_output.info("\n" + "=" * 70)
-    script_output.info("SAMPLE OUTPUTS (first 3)")
-    script_output.info("=" * 70)
-
-    for i, sample in enumerate(samples[:3], 1):
-        script_output.info(f"\n--- Sample {i} ---")
-        script_output.info(f"Task: {sample['task_type']}")
-        script_output.info(f"\nInput: {sample['input'][:200]}...")
-        script_output.info(f"\nReference Output: {sample['reference_output'][:200]}...")
-        script_output.info(f"\nGenerated Output: {sample['generated_output'][:200]}...")
+    # Run evaluation
+    evaluator = LegalModelEvaluator(args.base_model, args.checkpoint)
+    evaluator.run_evaluation(args.test_file, args.interactive, args.limit)
 
     # Save results
-    results = {
-        "perplexity_metrics": perplexity_metrics,
-        "accuracy_metrics": accuracy_metrics,
-        "samples": samples,
-        "config": {
-            "model_path": str(model_path),
-            "val_samples": len(val_dataset),
-            "generated_samples": len(samples)
-        }
-    }
+    evaluator.save_results(args.output)
 
-    with open(args.output, "w") as f:
-        json.dump(results, f, indent=2)
-
-    script_output.info(f"\n✅ Evaluation complete!")
-    script_output.info(f"Results saved to: {args.output}")
-
-    # Summary
-    script_output.info("\n" + "=" * 70)
-    script_output.info("EVALUATION SUMMARY")
-    script_output.info("=" * 70)
-    script_output.info(f"Perplexity: {perplexity_metrics['eval_perplexity']:.2f}")
-    script_output.info(f"Loss: {perplexity_metrics['eval_loss']:.4f}")
-    script_output.info(f"Hallucination rate: {accuracy_metrics['hallucination_rate']:.1%}")
-
-    # Quality assessment
-    if perplexity_metrics['eval_perplexity'] < 3.0:
-        script_output.info("\n✅ Model quality: EXCELLENT (perplexity < 3.0)")
-    elif perplexity_metrics['eval_perplexity'] < 5.0:
-        script_output.info("\n✅ Model quality: GOOD (perplexity < 5.0)")
-    elif perplexity_metrics['eval_perplexity'] < 10.0:
-        script_output.info("\n⚠️  Model quality: FAIR (perplexity < 10.0)")
-    else:
-        script_output.info("\n❌ Model quality: POOR (perplexity >= 10.0)")
-        script_output.info("   Consider training longer or adjusting hyperparameters")
+    print("\n" + "="*70)
+    print("EVALUATION COMPLETE")
+    print("="*70)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

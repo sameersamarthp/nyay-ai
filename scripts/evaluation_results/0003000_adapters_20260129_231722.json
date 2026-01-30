@@ -1,0 +1,713 @@
+{
+  "checkpoint": "models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors",
+  "evaluation_time": "2026-01-29T23:18:06.740317",
+  "metrics": {
+    "total_tests": 20,
+    "avg_score": 63.93095238095238,
+    "avg_keyword_coverage": 37.95238095238095,
+    "avg_word_count": 153.25,
+    "coherent_rate": 90.0,
+    "legal_terminology_rate": 75.0,
+    "hallucination_rate": 45.0,
+    "score_distribution": {
+      "excellent": 5,
+      "good": 10,
+      "acceptable": 3,
+      "poor": 2
+    },
+    "by_task": {
+      "q_and_a": {
+        "count": 5,
+        "avg_score": 64.28571428571429
+      },
+      "concept_explanation": {
+        "count": 3,
+        "avg_score": 63.57142857142858
+      },
+      "statutory_interpretation": {
+        "count": 2,
+        "avg_score": 84.16666666666666
+      },
+      "procedural_law": {
+        "count": 2,
+        "avg_score": 72.73809523809524
+      },
+      "fundamental_rights": {
+        "count": 2,
+        "avg_score": 82.0
+      },
+      "case_application": {
+        "count": 2,
+        "avg_score": 6.666666666666666
+      },
+      "legal_reasoning": {
+        "count": 2,
+        "avg_score": 61.33333333333333
+      },
+      "jurisdiction": {
+        "count": 2,
+        "avg_score": 76.33333333333333
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "qa_001",
+      "task": "q_and_a",
+      "difficulty": "easy",
+      "prompt": "What is a writ of habeas corpus and when can it be filed?",
+      "response": "A writ of habeas corpus is a legal document that requires a person to be brought before a court to determine whether they are being lawfully detained or imprisoned. It is a powerful tool that can be used to challenge the legality of a detention or imprisonment. A writ of habeas corpus can be filed in a variety of situations, including: (1) when a person is being held in jail or prison without a warrant or proper legal process; (2) when a person is being detained or imprisoned without a valid arrest warrant or probable cause; (3) when a person is being held in a private residence or other non-secure location; and (4) when a person is being held in a foreign country. In general, a writ of habeas corpus can be filed when a person believes they are being unlawfully detained or imprisoned. The writ is typically filed in the person's home state or the state where the detention or imprisonment is taking place. The writ is usually filed in the county",
+      "expected_keywords": [
+        "habeas corpus",
+        "unlawful detention",
+        "High Court",
+        "Supreme Court",
+        "Article 32",
+        "Article 226"
+      ],
+      "quality": {
+        "keyword_coverage": 0.16666666666666666,
+        "keywords_found": 1,
+        "keywords_total": 6,
+        "word_count": 173,
+        "length_adequate": true,
+        "sentence_count": 6,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 2,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 66.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:25.512984"
+    },
+    {
+      "id": "qa_002",
+      "task": "q_and_a",
+      "difficulty": "medium",
+      "prompt": "Explain the difference between bail and anticipatory bail under Indian law.",
+      "response": "Bail is a provision made by the court to a person who is arrested and charged with a crime, allowing them to remain free until their trial. The court sets a bail amount, which the accused must pay to be released from custody. If the accused fails to appear in court as scheduled, the bail amount is forfeited.\n\nAnticipatory bail, on the other hand, is a provision made by the court to a person who is accused of a crime, but has not yet been arrested. The court grants bail to the accused, allowing them to remain free until the police make an arrest. The purpose of anticipatory bail is to prevent the accused from being arrested and detained without a warrant.\n\nKey differences between bail and anticipatory bail:\n\n1. **Application**: Bail is applied for by the accused after they have been arrested, while anticipatory bail is applied for by the accused before they are arrested.\n2. **Purpose**: The purpose of bail is to ensure the accused appears in court",
+      "expected_keywords": [
+        "bail",
+        "anticipatory bail",
+        "CrPC",
+        "Section 438",
+        "arrest",
+        "granted before"
+      ],
+      "quality": {
+        "keyword_coverage": 0.5,
+        "keywords_found": 3,
+        "keywords_total": 6,
+        "word_count": 170,
+        "length_adequate": true,
+        "sentence_count": 10,
+        "coherent": true,
+        "legal_terminology": false,
+        "legal_term_count": 1,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 55.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:27.925339"
+    },
+    {
+      "id": "qa_003",
+      "task": "q_and_a",
+      "difficulty": "medium",
+      "prompt": "What are the grounds for divorce under the Hindu Marriage Act, 1955?",
+      "response": "The grounds for divorce under the Hindu Marriage Act, 1955 are: \n1. Adultery: The husband and wife must have committed adultery with each other or with someone else. \n2. Desertion: The husband or wife must have deserted the other without a valid reason. \n3. Cruelty: The husband or wife must have subjected the other to physical or mental cruelty. \n4. Impotency: The husband must be impotent. \n5. Renunciation: The husband or wife must have renounced their marriage. \n6. Impediment of mind: The husband or wife must be of unsound mind. \n7. Consensual divorce: The couple must have agreed to divorce. \n8. Mutual consent: The couple must have agreed to divorce. \n9. Incompatibility: The couple must be incompatible. \n10. Irreconcilable differences: The couple must have irreconcilable differences. \n11. Living apart:",
+      "expected_keywords": [
+        "adultery",
+        "cruelty",
+        "desertion",
+        "conversion",
+        "mental disorder",
+        "Section 13"
+      ],
+      "quality": {
+        "keyword_coverage": 0.5,
+        "keywords_found": 3,
+        "keywords_total": 6,
+        "word_count": 129,
+        "length_adequate": true,
+        "sentence_count": 22,
+        "coherent": true,
+        "legal_terminology": false,
+        "legal_term_count": 1,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 55.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:30.325976"
+    },
+    {
+      "id": "qa_004",
+      "task": "q_and_a",
+      "difficulty": "medium",
+      "prompt": "What is the doctrine of res judicata?",
+      "response": "Res judicata is a Latin term that means \"a matter already judged.\" It is a legal principle that prevents a party from relitigating a case that has already been decided by a court of competent jurisdiction. In other words, if a court has already decided a case, it is generally not allowed to revisit that decision, even if the parties involved disagree with the outcome.\n\nThe doctrine of res judicata is based on the idea that the judicial process is a continuous and ongoing process, and that once a case has been decided, it is not necessary to retry it. This principle is designed to promote finality and certainty in the judicial process, and to prevent parties from repeatedly litigating the same issues.\n\nThere are several key elements that must be met in order for the doctrine of res judicata to apply:\n\n1.  The first element is that the case must have been decided by a court of competent jurisdiction. This means that the court must have had the power to",
+      "expected_keywords": [
+        "res judicata",
+        "same matter",
+        "cannot be tried again",
+        "finality",
+        "CPC",
+        "Section 11"
+      ],
+      "quality": {
+        "keyword_coverage": 0.3333333333333333,
+        "keywords_found": 2,
+        "keywords_total": 6,
+        "word_count": 171,
+        "length_adequate": true,
+        "sentence_count": 8,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 2,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 73.33333333333333
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:32.697876"
+    },
+    {
+      "id": "qa_005",
+      "task": "q_and_a",
+      "difficulty": "easy",
+      "prompt": "What is a Public Interest Litigation (PIL) and who can file it?",
+      "response": "1. A PIL is a type of lawsuit that is filed to protect the public interest. It is a legal remedy that allows individuals or organizations to challenge government policies or actions that are deemed to be in the public interest. 2. A PIL can be filed by anyone who has a legitimate concern about a government policy or action that is affecting the public interest. This can include individuals, non-governmental organizations, and even government agencies. 3. A PIL is a type of lawsuit that is filed to challenge government policies or actions that are deemed to be in the violation of fundamental rights or public interest. It is a legal remedy that allows individuals or organizations to seek redress for violations of these rights. 4. A PIL is a type of lawsuit that is filed to challenge government policies or actions that are deemed to be in the violation of fundamental rights or public interest. It is a legal remedy that allows individuals or organizations to seek redress for violations of these rights. 5. A",
+      "expected_keywords": [
+        "PIL",
+        "public interest",
+        "any person",
+        "Supreme Court",
+        "High Court",
+        "Article 32",
+        "social justice"
+      ],
+      "quality": {
+        "keyword_coverage": 0.2857142857142857,
+        "keywords_found": 2,
+        "keywords_total": 7,
+        "word_count": 176,
+        "length_adequate": true,
+        "sentence_count": 14,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 71.42857142857143
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:35.096942"
+    },
+    {
+      "id": "concept_001",
+      "task": "concept_explanation",
+      "difficulty": "medium",
+      "prompt": "Explain the concept of judicial review in the Indian Constitution.",
+      "response": "The role of the judiciary in India is to ensure that the government does not overstep its constitutional powers and that the rights of citizens are protected. The judiciary plays a crucial role in upholding the rule of law and protecting the fundamental rights of citizens. The concept of judicial review is a fundamental aspect of the Indian Constitution, which allows the judiciary to review and strike down laws and government actions that are unconstitutional or violate fundamental rights.\n\n## Step 1: Understanding the concept of judicial review\nJudicial review is a legal concept that allows the judiciary to review and strike down laws and government actions that are unconstitutional or violate fundamental rights. This concept is a fundamental aspect of the Indian Constitution and is enshrined in Article 56 of the Constitution, which states that the judiciary shall ensure that the government does not overstep its constitutional powers.\n\n## Step 2: Role of the judiciary in India\nThe role of the judiciary in India is to ensure that the government does not overstep its constitutional powers and that",
+      "expected_keywords": [
+        "judicial review",
+        "constitutionality",
+        "Supreme Court",
+        "Parliament",
+        "fundamental rights",
+        "basic structure"
+      ],
+      "quality": {
+        "keyword_coverage": 0.3333333333333333,
+        "keywords_found": 2,
+        "keywords_total": 6,
+        "word_count": 179,
+        "length_adequate": true,
+        "sentence_count": 6,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 5,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 68.33333333333333
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:37.476293"
+    },
+    {
+      "id": "concept_002",
+      "task": "concept_explanation",
+      "difficulty": "medium",
+      "prompt": "What is the principle of natural justice?",
+      "response": "The principle of natural justice, also known as the principle of natural law, is a philosophical concept that suggests that there is an objective, universal, and eternal standard of justice that is inherent in the natural world. This principle is based on the idea that there is a higher power or a universal moral law that governs the universe and that this law is impartial, fair, and just.\nThe principle of natural justice is often associated with the concept of natural rights, which holds that individuals have inherent rights that are not granted by any government or institution. These rights are seen as being universal, inalienable, and unchanging, and they are considered to be the foundation of a just and moral society.\nThe principle of natural justice is also related to the concept of natural morality, which holds that there is a universal moral code that is inherent in the natural world. This code is seen as being based on reason, conscience, and the natural order of things, and it is considered to be a source of",
+      "expected_keywords": [
+        "natural justice",
+        "audi alteram partem",
+        "hear the other side",
+        "fair hearing",
+        "bias",
+        "nemo judex"
+      ],
+      "quality": {
+        "keyword_coverage": 0.16666666666666666,
+        "keywords_found": 1,
+        "keywords_total": 6,
+        "word_count": 177,
+        "length_adequate": true,
+        "sentence_count": 6,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 61.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:39.850497"
+    },
+    {
+      "id": "concept_003",
+      "task": "concept_explanation",
+      "difficulty": "medium",
+      "prompt": "Explain the concept of constitutional remedies under Article 32.",
+      "response": "The constitutional remedies under Article 32 of the Indian Constitution are designed to provide a framework for the protection of individual rights and freedoms. The remedies are designed to be flexible and adaptable to the changing needs of the society. The remedies are designed to be flexible and adaptable to the changing needs of the society. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed to be flexible and adaptable to the various stages of a dispute. The remedies are designed",
+      "expected_keywords": [
+        "Article 32",
+        "fundamental right",
+        "Supreme Court",
+        "writs",
+        "habeas corpus",
+        "mandamus",
+        "certiorari"
+      ],
+      "quality": {
+        "keyword_coverage": 0.14285714285714285,
+        "keywords_found": 1,
+        "keywords_total": 7,
+        "word_count": 188,
+        "length_adequate": true,
+        "sentence_count": 12,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 60.71428571428572
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:42.277425"
+    },
+    {
+      "id": "statute_001",
+      "task": "statutory_interpretation",
+      "difficulty": "easy",
+      "prompt": "What does Section 302 of the Indian Penal Code deal with?",
+      "response": "Section 302 of the Indian Penal Code deals with murder. It states that whoever commits murder shall be punished with death. This section is a part of the Indian Penal Code, 1860, and is used to define and punish the crime of murder in India. \n\nSection 302 of the Indian Penal Code is a very serious offense, and the punishment for it can be death. The section also provides for the trial of the accused, and the court has the power to award the death penalty in cases where the accused is found guilty of murder. \n\nIn addition to the punishment, Section 302 of the Indian Penal Code also provides for the definition of murder, which includes the killing of a human being with the intention of killing them. This section is used to guide the courts in determining the guilt or innocence of the accused in cases of murder. \n\nOverall, Section 302 of the Indian Penal Code is a critical part of the Indian Penal Code, and it plays a significant role in defining",
+      "expected_keywords": [
+        "Section 302",
+        "IPC",
+        "murder",
+        "punishment",
+        "death penalty",
+        "life imprisonment"
+      ],
+      "quality": {
+        "keyword_coverage": 0.6666666666666666,
+        "keywords_found": 4,
+        "keywords_total": 6,
+        "word_count": 175,
+        "length_adequate": true,
+        "sentence_count": 8,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 2,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 86.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:44.693420"
+    },
+    {
+      "id": "statute_002",
+      "task": "statutory_interpretation",
+      "difficulty": "medium",
+      "prompt": "Explain Section 375 of the Indian Penal Code.",
+      "response": "Section 375 of the Indian Penal Code deals with the definition of rape. According to this section, a man is said to commit rape if he has sexual intercourse with any woman against her will or without her consent. The section also states that the consent of a woman is not valid if she is under 18 years of age or if she is intoxicated or unconscious. This section aims to protect the rights of women and ensure that they are not subjected to sexual violence without their consent. The definition of rape in this section is widely accepted and used as a benchmark in Indian courts to determine the criminal liability of individuals accused of rape. The section also provides for the punishment for rape, which includes imprisonment and fine. The Indian Penal Code, 1860, defines rape as follows: \"Whoever commits rape with any woman, or with a child below seven years of age, or with a woman who is intoxicated or under twelve years of age, or with a woman who is insane by reason of mental disease",
+      "expected_keywords": [
+        "Section 375",
+        "IPC",
+        "rape",
+        "sexual assault",
+        "consent",
+        "age"
+      ],
+      "quality": {
+        "keyword_coverage": 0.6666666666666666,
+        "keywords_found": 4,
+        "keywords_total": 6,
+        "word_count": 180,
+        "length_adequate": true,
+        "sentence_count": 7,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 81.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:47.086223"
+    },
+    {
+      "id": "procedure_001",
+      "task": "procedural_law",
+      "difficulty": "medium",
+      "prompt": "What is the procedure for filing a writ petition in the High Court?",
+      "response": "1. The petition must be filed within 30 days of the date of the order or judgment. 2. The petition must be filed within 60 days of the date of the order or judgment. 3. The petition must be filed within 90 days of the date of the order or judgment. 4. The petition must be filed within 120 days of the date of the order or judgment.\nAnswer: 1\nExplanation: The correct answer is 1, as the petition must be filed within 30 days of the date of the order or judgment. The High Court has the power to grant a writ of habeas corpus, mandamus, quia timet, and other writs. A writ petition is a type of petition that is filed in the High Court to challenge the legality of a government action or decision. The procedure for filing a writ petition in the High Court is as follows: The petition must be filed within 30 days of the date of the",
+      "expected_keywords": [
+        "writ petition",
+        "High Court",
+        "Article 226",
+        "jurisdiction",
+        "affidavit",
+        "vakalatnama",
+        "filing"
+      ],
+      "quality": {
+        "keyword_coverage": 0.42857142857142855,
+        "keywords_found": 3,
+        "keywords_total": 7,
+        "word_count": 164,
+        "length_adequate": true,
+        "sentence_count": 12,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 72.14285714285714
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:49.495564"
+    },
+    {
+      "id": "procedure_002",
+      "task": "procedural_law",
+      "difficulty": "medium",
+      "prompt": "What is the process of appeal against a trial court judgment?",
+      "response": "in India\nThe process of appeal against a trial court judgment in India is as follows:\n\n**Appeal Process:**\n\n1. **Filing of Appeal Petition:** The party dissatisfied with the trial court judgment files an appeal petition with the High Court or the Supreme Court, as the case may be.\n2. **Preparation of Appeal Memorandum:** The party prepares an appeal memorandum, which is a detailed document outlining the grounds of appeal.\n3. **Filing of Appeal Memorandum:** The appeal memorandum is filed with the High Court or the Supreme Court, along with the prescribed fee.\n4. **Service of Notice:** The High Court or the Supreme Court serves a notice on the opposite party, informing them of the appeal.\n5. **Hearing of Appeal:** The appeal is then heard by a single judge or a division bench of the High Court or the Supreme Court.\n6. **Delivering Judgment:** The High Court or the Supreme Court delivers a judgment on the appeal, which",
+      "expected_keywords": [
+        "appeal",
+        "appellate court",
+        "memorandum of appeal",
+        "CrPC",
+        "time limit",
+        "grounds"
+      ],
+      "quality": {
+        "keyword_coverage": 0.3333333333333333,
+        "keywords_found": 2,
+        "keywords_total": 6,
+        "word_count": 157,
+        "length_adequate": true,
+        "sentence_count": 12,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 2,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 73.33333333333333
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:51.899096"
+    },
+    {
+      "id": "rights_001",
+      "task": "fundamental_rights",
+      "difficulty": "easy",
+      "prompt": "What is the right to equality under Article 14?",
+      "response": "The right to equality under Article 14 of the Indian Constitution is the right to be treated equally and without discrimination in the eyes of the law. It prohibits discrimination on the basis of caste, religion, place of birth, residence, sex, or any other status. The right to equality is a fundamental right, and it is violated when a person is discriminated against on the basis of any of these grounds. The right to equality is not limited to the state, but it is also a right of the individual. The state cannot deny this right to any individual. The right to equality is a basic principle of justice and is essential for the protection of human dignity. It is violated when a person is discriminated against on the basis of any of these grounds. The right to equality is not limited to the state, but it is also a right of the individual. The state cannot deny this right to any individual. The right to equality is a basic principle of justice and is essential for the protection of",
+      "expected_keywords": [
+        "Article 14",
+        "equality",
+        "equal protection",
+        "discrimination",
+        "reasonable classification"
+      ],
+      "quality": {
+        "keyword_coverage": 0.6,
+        "keywords_found": 3,
+        "keywords_total": 5,
+        "word_count": 180,
+        "length_adequate": true,
+        "sentence_count": 10,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 84.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:54.287129"
+    },
+    {
+      "id": "rights_002",
+      "task": "fundamental_rights",
+      "difficulty": "medium",
+      "prompt": "Explain the scope of Article 21 - Right to Life and Personal Liberty.",
+      "response": "Article 21 of the Indian Constitution states that \"No person shall be deprived of his life or liberty except according to the law.\" This article is a fundamental right that protects individuals from arbitrary or unlawful actions that may infringe upon their right to life and personal liberty. The scope of this article can be understood as follows: The right to life and personal liberty is not absolute, but it is a fundamental right that is subject to reasonable restrictions. The restrictions imposed on this right must be justified by the state and must be proportionate to the aim pursued. The state must demonstrate that the restriction is necessary to achieve a legitimate objective, such as maintaining public order, protecting the rights of others, or ensuring the safety of the individual. The scope of Article 21 also includes the protection of personal liberty, which encompasses various aspects of individual freedom, such as freedom of speech, assembly, and association. The article also protects the right to personal autonomy, including the right to make decisions about one's own life,",
+      "expected_keywords": [
+        "Article 21",
+        "life",
+        "personal liberty",
+        "procedure established by law",
+        "fair trial",
+        "human dignity"
+      ],
+      "quality": {
+        "keyword_coverage": 0.5,
+        "keywords_found": 3,
+        "keywords_total": 6,
+        "word_count": 177,
+        "length_adequate": true,
+        "sentence_count": 7,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 4,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 80.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:56.670851"
+    },
+    {
+      "id": "case_001",
+      "task": "case_application",
+      "difficulty": "medium",
+      "prompt": "A person is detained without being produced before a magistrate within 24 hours. What legal remedy is available?",
+      "response": "The best answer is Habeas Corpus.",
+      "expected_keywords": [
+        "habeas corpus",
+        "illegal detention",
+        "24 hours",
+        "magistrate",
+        "Article 22",
+        "writ"
+      ],
+      "quality": {
+        "keyword_coverage": 0.16666666666666666,
+        "keywords_found": 1,
+        "keywords_total": 6,
+        "word_count": 6,
+        "length_adequate": false,
+        "sentence_count": 1,
+        "coherent": false,
+        "legal_terminology": false,
+        "legal_term_count": 0,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 6.666666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:56.942100"
+    },
+    {
+      "id": "case_002",
+      "task": "case_application",
+      "difficulty": "medium",
+      "prompt": "A government order violates fundamental rights. What action can be taken?",
+      "response": "The best answer is Judicial Review.",
+      "expected_keywords": [
+        "writ",
+        "unconstitutional",
+        "Article 32",
+        "Article 226",
+        "fundamental rights",
+        "judicial review"
+      ],
+      "quality": {
+        "keyword_coverage": 0.16666666666666666,
+        "keywords_found": 1,
+        "keywords_total": 6,
+        "word_count": 6,
+        "length_adequate": false,
+        "sentence_count": 1,
+        "coherent": false,
+        "legal_terminology": false,
+        "legal_term_count": 0,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 6.666666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:57.180046"
+    },
+    {
+      "id": "legal_reasoning_001",
+      "task": "legal_reasoning",
+      "difficulty": "medium",
+      "prompt": "Can a person be tried twice for the same offense? Explain with legal principle.",
+      "response": "(Answer in 2-3 paragraphs)\n\nIn the United States, a person cannot be tried twice for the same offense. This is based on the principle of double jeopardy, which is a fundamental right protected by the Fifth Amendment to the United States Constitution. The Fifth Amendment states that \"no person shall... be subject for the same offense to be twice put in jeopardy of life or limb.\" (U.S. Const. amend. V)\n\nThe double jeopardy clause prohibits the government from prosecuting a person for the same offense more than once. This means that if a person is acquitted or convicted of an offense, they cannot be retried for the same offense. The Supreme Court has consistently interpreted the double jeopardy clause to prohibit retrials, and has held that the clause applies to both federal and state courts. (United States v. Miller, 471 F.2d 1133 (D.C. Cir. 1972)) In other words, once a person has been tried and convicted of an",
+      "expected_keywords": [
+        "double jeopardy",
+        "Article 20",
+        "autrefois acquit",
+        "autrefois convict",
+        "same offense"
+      ],
+      "quality": {
+        "keyword_coverage": 0.4,
+        "keywords_found": 2,
+        "keywords_total": 5,
+        "word_count": 158,
+        "length_adequate": true,
+        "sentence_count": 17,
+        "coherent": true,
+        "legal_terminology": false,
+        "legal_term_count": 1,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 56.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:17:59.578171"
+    },
+    {
+      "id": "legal_reasoning_002",
+      "task": "legal_reasoning",
+      "difficulty": "medium",
+      "prompt": "When can a court refuse to grant bail in a criminal case?",
+      "response": "A court can refuse to grant bail in a criminal case if the accused is likely to commit another crime or flee the jurisdiction if released on bail.  The court may also refuse to grant bail if the accused is likely to interfere with witnesses or obstruct justice.  Additionally, the court may refuse to grant bail if the accused is likely to pose a threat to public safety or national security.  The court's decision to refuse bail is typically based on the specific circumstances of the case and the accused's criminal history.  The court may also consider the accused's ability to appear in court and comply with bail conditions.  In some cases, the court may refuse to grant bail if the accused is a flight risk or a danger to the community.  The court's decision to refuse bail is final and cannot be appealed.  The court may also consider the accused's ability to pay for bail and the likelihood of the accused returning to court for trial.  The court's decision to refuse bail is typically",
+      "expected_keywords": [
+        "bail",
+        "serious offense",
+        "abscond",
+        "tamper with evidence",
+        "influence witnesses",
+        "non-bailable"
+      ],
+      "quality": {
+        "keyword_coverage": 0.16666666666666666,
+        "keywords_found": 1,
+        "keywords_total": 6,
+        "word_count": 175,
+        "length_adequate": true,
+        "sentence_count": 9,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 3,
+        "hallucination_markers": [],
+        "has_hallucination_risk": false,
+        "overall_score": 66.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:18:01.953452"
+    },
+    {
+      "id": "jurisdiction_001",
+      "task": "jurisdiction",
+      "difficulty": "easy",
+      "prompt": "What is the difference between original and appellate jurisdiction?",
+      "response": "in the context of the US Supreme Court?\nThe US Supreme Court has two types of jurisdiction: original and appellate. The main difference between the two is the stage of the judicial process in which the Court becomes involved.\n\n**Original Jurisdiction:**\nThe Supreme Court has original jurisdiction over cases that involve federal questions, such as:\n\n* Cases involving federal statutes or treaties\n* Cases involving ambassadors, other public ministers, or consuls\n* Cases involving foreign sovereigns or their subjects\n* Cases involving federal officials or their actions\n* Cases involving the federal government itself\n\nIn these cases, the Supreme Court has the power to hear and decide the case from the beginning, without the need for an appeal from a lower court.\n\n**Appellate Jurisdiction:**\nThe Supreme Court has appellate jurisdiction over cases that have been decided by a lower court, such as the US Courts of Appeals or the US District Courts. In these cases, the Supreme Court reviews the decision of the lower court to determine whether it",
+      "expected_keywords": [
+        "original jurisdiction",
+        "appellate jurisdiction",
+        "first instance",
+        "appeal",
+        "Supreme Court",
+        "High Court"
+      ],
+      "quality": {
+        "keyword_coverage": 0.6666666666666666,
+        "keywords_found": 4,
+        "keywords_total": 6,
+        "word_count": 169,
+        "length_adequate": true,
+        "sentence_count": 6,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 4,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 81.66666666666666
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:18:04.341776"
+    },
+    {
+      "id": "jurisdiction_002",
+      "task": "jurisdiction",
+      "difficulty": "hard",
+      "prompt": "What matters fall under the original jurisdiction of the Supreme Court?",
+      "response": "?\nThe Supreme Court has the original jurisdiction to hear cases involving federal laws and the Constitution. This includes cases involving:\n\n*   **Federal laws**: Cases involving federal laws, such as the Commerce Clause, the Interstate Commerce Clause, and the Commerce Clause, are within the original jurisdiction of the Supreme Court.\n*   **Constitutional issues**: Cases involving constitutional issues, such as the interpretation of the Constitution, are also within the original jurisdiction of the Supreme Court.\n*   **Disputes between states**: Cases involving disputes between states, such as border disputes or disputes over state laws, are within the original jurisdiction of the Supreme Court.\n*   **Cases involving ambassadors, other public ministers, and consuls**: Cases involving ambassadors, other public ministers, and consuls, such as disputes over diplomatic immunity, are within the original jurisdiction of the Supreme Court.\n*   **Cases involving foreign sovereigns**: Cases involving foreign sovereigns, such as disputes over foreign trade agreements or disputes over foreign territory, are",
+      "expected_keywords": [
+        "original jurisdiction",
+        "Article 131",
+        "disputes between states",
+        "Union and states",
+        "federal disputes"
+      ],
+      "quality": {
+        "keyword_coverage": 0.4,
+        "keywords_found": 2,
+        "keywords_total": 5,
+        "word_count": 155,
+        "length_adequate": true,
+        "sentence_count": 6,
+        "coherent": true,
+        "legal_terminology": true,
+        "legal_term_count": 4,
+        "hallucination_markers": [
+          "No hedging language (overly confident?)"
+        ],
+        "has_hallucination_risk": true,
+        "overall_score": 71.0
+      },
+      "manual_score": null,
+      "manual_feedback": null,
+      "timestamp": "2026-01-29T23:18:06.740244"
+    }
+  ]
+}
