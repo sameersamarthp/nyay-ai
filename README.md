@@ -155,6 +155,32 @@ has inherent powers to quash an FIR. The grounds include:
 
 This demonstrates how **Nyay AI's fine-tuning on real judgments prevents critical factual errors** that could mislead users.
 
+### Evaluation 1
+**_Prompt = What are the grounds for quashing an FIR under Section 482 CrPC in Indian law?_**
+
+#### Ollama3.2:3b                                                                                                                                                          
+<img width="992" height="506" alt="Screenshot 2026-01-30 at 9 55 09 PM" src="https://github.com/user-attachments/assets/53074ac5-54fd-46e3-b6dd-50fad9d4537b" /> 
+
+#### Nyay-ai (Fine tuned)
+<img width="943" height="549" alt="Screenshot 2026-01-30 at 9 55 23 PM" src="https://github.com/user-attachments/assets/909316d3-d577-430b-b759-12f3534366aa" />
+
+#### Gemini as JudgeLLM
+<img width="745" height="728" alt="Screenshot 2026-01-30 at 9 58 52 PM" src="https://github.com/user-attachments/assets/fe113882-ac6d-468f-96de-20c9b972d64b" />
+
+### Evaluation 2
+**_Prompt = What is Section 498A IPC and what are the essential ingredients to prove an offense under this section?_**
+
+#### Ollama3.2:3b                                                                                                                                                          
+<img width="986" height="757" alt="Screenshot 2026-01-30 at 10 08 15 PM" src="https://github.com/user-attachments/assets/770eb533-222c-4326-a33b-1e9faa81f1da" />
+
+
+#### Nyay-ai (Fine tuned)
+<img width="973" height="632" alt="Screenshot 2026-01-30 at 10 08 41 PM" src="https://github.com/user-attachments/assets/b567888c-6461-467f-9fec-c97ff60fc670" />
+
+#### Gemini as JudgeLLM
+<img width="798" height="684" alt="Screenshot 2026-01-30 at 10 09 13 PM" src="https://github.com/user-attachments/assets/529070ae-0628-44d9-8c2a-2ae953d947dd" />
+
+
 ### Key Metrics
 
 | Metric | Value | Status |
@@ -185,7 +211,7 @@ This demonstrates how **Nyay AI's fine-tuning on real judgments prevents critica
 - **OS**: macOS 12+ (Monterey or later)
 - **Software**: Python 3.11+, Git, [Ollama](https://ollama.ai/)
 
-### Option 1: Use the Pre-Deployed Model (Recommended)
+### Use the Pre-Deployed Model (Recommended)
 
 If you have the pre-built GGUF model:
 
@@ -210,70 +236,6 @@ curl http://localhost:11434/api/generate -d '{
   "stream": false
 }'
 ```
-
-### Option 2: Build from Source (Full Pipeline)
-
-```bash
-# 1. Clone repository
-git clone https://github.com/sameersamarthp/nyay-ai.git
-cd nyay-ai
-
-# 2. Setup data collection environment
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# 3. Download and process data (Phase 1)
-# See docs/PHASE1_DATA_COLLECTION.md for detailed instructions
-python scripts/load_aws_metadata.py --data-dir ./data/aws_data/data
-python scripts/process_aws_pdfs.py --tar-dir ./data/aws_data/tar
-
-# 4. Generate training data (Phase 2)
-# Requires Anthropic API key for Claude
-export ANTHROPIC_API_KEY="your-key-here"
-python scripts/prepare_training_data.py
-
-# 5. Setup training environment
-python3 -m venv .venv-train
-source .venv-train/bin/activate
-pip install -r requirements-training.txt
-
-# 6. Train model (Phase 3)
-# ~12 hours on M2 MacBook Pro
-python scripts/train_model.py
-
-# 7. Evaluate
-python scripts/evaluate_model.py \
-  --checkpoint models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors
-
-# 8. Setup llama.cpp for GGUF conversion
-bash scripts/setup_llama_cpp.sh
-
-# 9. Convert to GGUF format
-bash scripts/convert_mlx_to_gguf.sh
-
-# 10. Deploy with Ollama
-ollama create nyay-ai -f models/nyay-ai-gguf/Modelfile
-ollama run nyay-ai
-```
-
-### Option 3: Quick Test (Pre-trained Checkpoint)
-
-If you have the checkpoint files but not the GGUF model:
-
-```bash
-# Setup training environment
-source .venv-train/bin/activate
-
-# Test with MLX directly
-python scripts/evaluate_model.py \
-  --checkpoint models/nyay-ai-checkpoints-v4/0003000_adapters.safetensors \
-  --limit 5
-
-# Convert to GGUF
-bash scripts/convert_mlx_to_gguf.sh
-```
-
 ---
 
 ## Usage Examples
@@ -510,6 +472,6 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 **Built with ❤️ for the Indian legal community**
 
-[⭐ Star this repo](https://github.com/yourusername/nyay-ai) | [🐛 Report Bug](https://github.com/yourusername/nyay-ai/issues) | [💡 Request Feature](https://github.com/yourusername/nyay-ai/issues)
+[⭐ Star this repo](https://github.com/sameersamarthp/nyay-ai) | [🐛 Report Bug](https://github.com/sameersamarthp/nyay-ai/issues) | [💡 Request Feature](https://github.com/sameersamarthp/nyay-ai/issues)
 
 </div>
