@@ -74,3 +74,6 @@ pip-delete-this-directory.txt
 *.tmp
 *.temp
 *.bak
+
+# External dependencies (clone separately)
+llama.cpp/

@@ -240,6 +240,33 @@ pytest tests/ -v
 | `pandas` | >=2.0.0 | DataFrame operations |
 | `PyPDF2` | >=3.0.0 | PDF text extraction |
 
+### External Dependencies (Not in Repository)
+
+**llama.cpp** - Required for GGUF model conversion
+
+This is an external dependency that is **NOT included** in the repository. You must clone and build it separately:
+
+```bash
+# Automated setup (recommended)
+bash scripts/setup_llama_cpp.sh
+
+# OR manual setup
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --target llama-quantize -j 8
+```
+
+**Why not included?**
+- External project with its own version control
+- Contains platform-specific binaries (~500 MB)
+- Users should get the latest version directly
+
+**When needed?**
+- Only for Phase 3: Converting trained models to GGUF format
+- Not required for Phase 1 (data collection) or Phase 2 (training data generation)
+
 ---
 
 ## Coding Conventions

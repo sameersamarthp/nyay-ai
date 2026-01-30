@@ -65,10 +65,19 @@ source .venv-train/bin/activate
 # 2. Install mlx-lm if not already installed
 pip install mlx-lm
 
-# 3. Install llama.cpp (automatic in script, or manual):
+# 3. Setup llama.cpp (automated):
+bash scripts/setup_llama_cpp.sh
+
+# OR manual setup:
 git clone https://github.com/ggerganov/llama.cpp
-cd llama.cpp && make && cd ..
+cd llama.cpp
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --target llama-quantize -j 8
+cd ../..
 ```
+
+**Note**: llama.cpp is NOT included in the repository. It's an external dependency that must be cloned separately.
 
 ### Step 1: Fuse LoRA Adapters
 
