@@ -4,7 +4,7 @@
 
 A privacy-first, locally-runnable AI assistant specialized in Indian law, built by fine-tuning Llama 3.2 3B on 8,000 real Indian High Court judgments.
 
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen)]()
+[![Status](https://img.shields.io/badge/Status-Experimental-yellow)]()
 [![Model](https://img.shields.io/badge/Model-Llama%203.2%203B-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)]()
