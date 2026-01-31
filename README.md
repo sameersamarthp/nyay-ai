@@ -1,8 +1,8 @@
-# Nyay AI - Indian Legal Assistant
+# Nyay AI - An Experiment in Indian Legal AI
 
 > **Nyay** (न्याय) means "Justice" in Sanskrit/Hindi
 
-A privacy-first, locally-runnable AI assistant specialized in Indian law, built by fine-tuning Llama 3.2 3B on 8,000 real Indian High Court judgments.
+An experimental project exploring whether fine-tuning a small language model (Llama 3.2 3B) on Indian court judgments can improve its understanding of India-specific legal concepts. This is a learning exercise, not a production-ready tool.
 
 [![Status](https://img.shields.io/badge/Status-Experimental-yellow)]()
 [![Model](https://img.shields.io/badge/Model-Llama%203.2%203B-blue)]()
@@ -11,297 +11,171 @@ A privacy-first, locally-runnable AI assistant specialized in Indian law, built 
 
 ---
 
-## Purpose & Overview
+## What This Project Explores
 
-**The Problem**: General-purpose AI models like ChatGPT or Claude struggle with India-specific legal queries. They often:
-- Cite incorrect jurisdictions (e.g., stating Magistrates can quash FIRs when only High Courts can)
-- Lack depth on Indian statutes, case law, and procedures
-- Cannot access real Indian court judgments
-- Send your sensitive legal queries to third-party servers
+**The Question**: Can fine-tuning a small open-source model on real Indian court judgments help it better understand India-specific legal concepts compared to the base model?
 
-**The Solution**: Nyay AI is a specialized legal assistant that:
-- ✅ **Knows Indian Law**: Trained on 58,000+ real judgments from Delhi and Bombay High Courts
-- ✅ **Runs Locally**: 100% privacy - your queries never leave your machine
-- ✅ **Fast & Lightweight**: 2 GB model runs on M1/M2 Macs at 68 tokens/sec
-- ✅ **Accurate**: Outperforms base Llama 3.2 3B on India-specific legal questions
-- ✅ **Free & Open**: No API costs, no subscriptions, no data collection
+**The Approach**:
+- Collected ~58,000 High Court judgments from Delhi and Bombay courts
+- Generated ~8,000 training examples using an LLM
+- Fine-tuned Llama 3.2 3B using QLoRA on Apple Silicon
+- Compared outputs with the base model on a small test set
 
-**Use Cases**:
-- Legal researchers exploring case law
-- Law students learning Indian statutes
-- Lawyers needing quick references
-- Developers building legal tech products
-- Anyone needing preliminary legal information about Indian law
+**What This Is**:
+- A personal learning project exploring LLM fine-tuning
+- An experiment in domain-specific model adaptation
+- A demonstration of local, privacy-preserving AI inference
+- An experiment to learn more about Quantisation, GGUF format and its associated trade offs
+- ~90% of the code was written by Claude Code, with me providing direction
 
-⚠️ **Disclaimer**: This is a research prototype. Always verify legal information with qualified professionals.
+**What This Is NOT**:
+- A production-ready legal assistant
+- A replacement for professional legal advice
+- A thoroughly validated or benchmarked system
+- Something you should rely on for actual legal matters
 
-⚠️ **Disclaimer**: As one can make out, 90% of the code was written by Claude Code, with me giving the directions.
-
----
-
-## Why Nyay AI is Different
-
-### 1. **Privacy First**
-
-Unlike ChatGPT, Claude, or other cloud AI services:
-
-| Feature | Cloud AI (ChatGPT/Claude) | Nyay AI |
-|---------|---------------------------|---------|
-| **Data Privacy** | ❌ Queries sent to third-party servers | ✅ 100% local - never leaves your machine |
-| **Internet Required** | ❌ Yes | ✅ No - works offline |
-| **Usage Logging** | ❌ May be logged for training | ✅ Zero logging |
-| **Cost** | ❌ $20-30/month | ✅ Free |
-| **Data Retention** | ❌ Unknown retention period | ✅ No data retention |
-
-**Why it matters**: Legal queries often involve sensitive client information, pending cases, or confidential matters. With Nyay AI, your queries remain completely private.
-
-### 2. **Local Inference**
-
-Nyay AI runs entirely on your machine using **Ollama**:
-- **Zero latency from network calls** - responses in seconds, not minutes
-- **No rate limits** - query as much as you want
-- **Works offline** - no internet dependency
-- **Optimized for Apple Silicon** - leverages M1/M2 GPU acceleration
-
-**Performance on M2 MacBook Pro**:
-- **Speed**: ~68 tokens/second
-- **Memory**: ~3 GB RAM during inference
-- **Model Size**: 2 GB on disk
-
-### 3. **Quantization - Quality Meets Efficiency**
-
-We use **Q4_K_M quantization** (4-bit) to compress the model from 6 GB to 2 GB:
-
-| Quantization | Size | Quality | Speed | Best For |
-|--------------|------|---------|-------|----------|
-| F16 (Full) | 6 GB | 100% | Slow | Research |
-| Q8_0 | 3.5 GB | 99%+ | Medium | High accuracy needs |
-| **Q4_K_M** ✨ | **2 GB** | **97-98%** | **Fast** | **Production use** |
-| Q4_0 | 1.8 GB | 95% | Fastest | Extreme constraints |
-
-**Why Q4_K_M?**
-- **97-98% quality retention** - minimal accuracy loss
-- **68% size reduction** - fits easily on consumer hardware
-- **3x faster inference** - compared to full-precision models
-- **Balanced trade-off** - best quality-per-GB ratio
-
-**Real-world impact**: You can run a high-quality legal AI on a MacBook Air without sacrificing accuracy.
-
-### 4. **Fine-Tuned on Real Data**
-
-Unlike general models, Nyay AI was trained on:
-- **58,222 real court judgments** from Delhi and Bombay High Courts
-- **7,972 carefully curated training examples** across 4 task types:
-  - Judgment summarization
-  - Legal question answering
-  - Outcome analysis
-  - Information extraction
-
-**Training method**: QLoRA 8-bit fine-tuning
-- Trains only 0.3% of parameters (8M out of 3B)
-- Achieves 97-99% of full fine-tuning quality
-- Fits in 19 GB memory vs 28 GB for full fine-tuning
+⚠️ **Important**: This is a research experiment. The model may produce incorrect, incomplete, or misleading information. Always verify any legal information with qualified professionals.
 
 ---
 
-## Major Achievements
+## Approach & Design Choices
 
-### Performance Comparison: Nyay AI vs Base Llama 3.2 3B
+### 1. **Local & Private Inference**
 
-We evaluated both models on 20 India-specific legal queries across 8 categories. Here are the key results:
+One benefit of this approach is that queries stay on your machine:
+- Runs entirely locally using Ollama
+- No data sent to external servers
+- Works offline once set up
 
-#### **Overall Evaluation Score**
+**Observed performance on M2 MacBook Pro**:
+- Speed: ~68 tokens/second
+- Memory: ~3 GB RAM during inference
+- Model Size: 2 GB on disk
 
-| Model | Overall Score | Coherence | Legal Terminology | Accuracy |
-|-------|---------------|-----------|-------------------|----------|
-| **Nyay AI** | **63.9/100** | **90%** | **75%** | **Good** |
-| Base Llama 3.2 | ~45/100 | 70% | 45% | Fair |
+### 2. **Quantization**
 
-**Nyay AI is 42% better overall** than the base model on Indian legal queries.
+The model uses Q4_K_M quantization (4-bit) to compress from 6 GB to 2 GB. Industry benchmarks suggest this typically retains 97-98% quality, though I haven't independently verified this for this specific model.
 
-#### **Task-Specific Performance**
+### 3. **Training Data**
 
-| Task Type | Nyay AI Score | Performance |
-|-----------|---------------|-------------|
-| **Statutory Interpretation** | **84.2/100** | ✅ Excellent |
-| **Fundamental Rights** | **82.0/100** | ✅ Excellent |
-| **Jurisdiction** | **76.3/100** | ✅ Good |
-| **Procedural Law** | **72.7/100** | ✅ Good |
-| **Legal Q&A** | **64.3/100** | ✅ Good |
-| **Concept Explanation** | **63.6/100** | ✅ Good |
-| **Legal Reasoning** | **61.3/100** | ✅ Good |
+- **Source**: 58,222 judgments from Delhi and Bombay High Courts (via [AWS Open Data](https://registry.opendata.aws/indian-high-court-judgments/))
+- **Training examples**: 7,972 examples generated across 4 task types
+- **Method**: QLoRA 8-bit fine-tuning (trains ~0.3% of parameters)
+- **Hardware**: MacBook Pro M2, 32GB RAM
+- **Training time**: ~12 hours
 
-#### **Real Example: Critical Jurisdictional Error Caught**
+---
+
+## Preliminary Results
+
+### Limited Comparison: Fine-tuned vs Base Model
+
+I tested both models on **20 hand-crafted legal queries** across 8 categories. This is a very small sample size, so take these numbers as rough indicators rather than definitive benchmarks.
+
+| Metric | Nyay AI (Fine-tuned) | Base Llama 3.2 3B |
+|--------|---------------------|-------------------|
+| Overall Score (automated) | 63.9/100 | ~45/100 (estimated) |
+| Coherence Rate | 90% | ~70% |
+| Legal Terminology Usage | 75% | ~45% |
+
+**Caveats**:
+- Only 20 test cases (statistically insufficient for strong claims)
+- Automated scoring has limitations
+- Base model scores are rough estimates
+- Results may not generalize
+
+### One Interesting Example
 
 **Query**: *"What are the grounds for quashing an FIR under Section 482 CrPC?"*
 
-**Base Llama 3.2 3B Response**:
-```
-The Magistrate can quash an FIR under Section 482 if there is no
-prima facie case or the complaint is frivolous...
-```
-❌ **WRONG** - Only the High Court has this power, not Magistrates!
+**Base Llama 3.2 3B** incorrectly stated that a Magistrate can quash FIRs.
 
-**Nyay AI Response**:
-```
-Under Section 482 of the Code of Criminal Procedure, the High Court
-has inherent powers to quash an FIR. The grounds include:
-1. No prima facie case is made out
-2. The allegations do not constitute an offense
-3. The complaint is frivolous or vexatious
-...
-```
-✅ **CORRECT** - Properly identifies High Court jurisdiction
+**Nyay AI** correctly identified that only the High Court has this power under Section 482.
 
-This demonstrates how **Nyay AI's fine-tuning on real judgments prevents critical factual errors** that could mislead users.
+This suggests the fine-tuning may have helped with some jurisdiction-specific knowledge, but one example doesn't prove general improvement.
 
-### Evaluation 1
-**_Prompt = What are the grounds for quashing an FIR under Section 482 CrPC in Indian law?_**
+### Visual Comparisons
 
-#### Ollama3.2:3b                                                                                                                                                          
-<img width="992" height="506" alt="Screenshot 2026-01-30 at 9 55 09 PM" src="https://github.com/user-attachments/assets/53074ac5-54fd-46e3-b6dd-50fad9d4537b" /> 
+**Evaluation 1: Section 482 CrPC**
 
-#### Nyay-ai (Fine tuned)
-<img width="943" height="549" alt="Screenshot 2026-01-30 at 9 55 23 PM" src="https://github.com/user-attachments/assets/909316d3-d577-430b-b759-12f3534366aa" />
+*Prompt: What are the grounds for quashing an FIR under Section 482 CrPC in Indian law?*
 
-#### Gemini as JudgeLLM
-<img width="745" height="728" alt="Screenshot 2026-01-30 at 9 58 52 PM" src="https://github.com/user-attachments/assets/fe113882-ac6d-468f-96de-20c9b972d64b" />
+Base Llama 3.2:3b:
+<img width="992" height="506" alt="Base model response" src="https://github.com/user-attachments/assets/53074ac5-54fd-46e3-b6dd-50fad9d4537b" />
 
-### Evaluation 2
-**_Prompt = What is Section 498A IPC and what are the essential ingredients to prove an offense under this section?_**
+Nyay AI (Fine-tuned):
+<img width="943" height="549" alt="Fine-tuned model response" src="https://github.com/user-attachments/assets/909316d3-d577-430b-b759-12f3534366aa" />
 
-#### Ollama3.2:3b                                                                                                                                                          
-<img width="986" height="757" alt="Screenshot 2026-01-30 at 10 08 15 PM" src="https://github.com/user-attachments/assets/770eb533-222c-4326-a33b-1e9faa81f1da" />
+Gemini as Judge:
+<img width="745" height="728" alt="Gemini evaluation" src="https://github.com/user-attachments/assets/fe113882-ac6d-468f-96de-20c9b972d64b" />
 
+**Evaluation 2: Section 498A IPC**
 
-#### Nyay-ai (Fine tuned)
-<img width="973" height="632" alt="Screenshot 2026-01-30 at 10 08 41 PM" src="https://github.com/user-attachments/assets/b567888c-6461-467f-9fec-c97ff60fc670" />
+*Prompt: What is Section 498A IPC and what are the essential ingredients to prove an offense under this section?*
 
-#### Gemini as JudgeLLM
-<img width="798" height="684" alt="Screenshot 2026-01-30 at 10 09 13 PM" src="https://github.com/user-attachments/assets/529070ae-0628-44d9-8c2a-2ae953d947dd" />
+Base Llama 3.2:3b:
+<img width="986" height="757" alt="Base model response" src="https://github.com/user-attachments/assets/770eb533-222c-4326-a33b-1e9faa81f1da" />
 
+Nyay AI (Fine-tuned):
+<img width="973" height="632" alt="Fine-tuned model response" src="https://github.com/user-attachments/assets/b567888c-6461-467f-9fec-c97ff60fc670" />
 
-### Key Metrics
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Training Data** | 7,972 examples from 4,000 judgments | ✅ |
-| **Data Quality** | 98.6% of 58,222 documents processed | ✅ |
-| **Training Loss** | 1.182 (train), 1.165 (val) | ✅ Converged |
-| **Training Time** | ~12 hours on M2 MacBook Pro | ✅ |
-| **Model Size** | 2 GB (from 6 GB, 68% reduction) | ✅ |
-| **Inference Speed** | 68 tokens/sec on M2 | ✅ |
-| **Coherence Rate** | 90% | ✅ Excellent |
-| **Legal Terminology** | 75% accuracy | ✅ Good |
-
-### Data Sources
-
-- **Primary**: [AWS Open Data - Indian High Court Judgments](https://registry.opendata.aws/indian-high-court-judgments/)
-  - 16.7 million judgments from 25 High Courts
-  - Loaded 58,222 judgments from Delhi HC & Bombay HC (2025 data)
-- **Alternative**: Web scrapers for Indian Kanoon, Supreme Court, India Code
+Gemini as Judge:
+<img width="798" height="684" alt="Gemini evaluation" src="https://github.com/user-attachments/assets/529070ae-0628-44d9-8c2a-2ae953d947dd" />
 
 ---
 
-## Quick Start Guide
+## Known Limitations & Issues
+
+This experiment has significant limitations:
+
+### Technical Issues
+1. **Case Application Task**: Scores only 6.7/100 - model often gives one-word answers
+2. **Data Truncation**: 52% of training examples were truncated at 2048 tokens
+3. **Limited Evaluation**: Only 20 test cases (need 100+ for statistical significance)
+4. **Hallucination Risk**: ~45% of responses flagged as potential hallucinations
+
+### Fundamental Limitations
+- Small model (3B parameters) has inherent capability limits
+- Training data quality depends on LLM-generated examples
+- No expert legal review of outputs
+- May confidently produce incorrect information
+- Limited to two High Courts (Delhi, Bombay)
+
+### What Didn't Work Well
+- Complex multi-step legal reasoning
+- Applying legal principles to novel fact patterns
+- Citing specific case precedents accurately
+
+---
+
+## Quick Start (If You Want to Try It)
 
 ### Prerequisites
+- M1/M2 Mac with 16 GB+ RAM
+- [Ollama](https://ollama.ai/) installed
+- The GGUF model file (not included in repo due to size)
 
-- **Hardware**: M1/M2 Mac with 16 GB+ RAM (recommended: 32 GB)
-- **OS**: macOS 12+ (Monterey or later)
-- **Software**: Python 3.11+, Git, [Ollama](https://ollama.ai/)
-
-### Use the Pre-Deployed Model (Recommended)
-
-If you have the pre-built GGUF model:
-
+### Running the Model
 ```bash
-# 1. Install Ollama
-# Download from: https://ollama.ai/download
-
-# 2. Create model from Modelfile
+# Create model from Modelfile
 ollama create nyay-ai -f models/nyay-ai-gguf/Modelfile
-
-# 3. Use the model
-ollama run nyay-ai "What is Section 498A IPC?"
 
 # Interactive mode
 ollama run nyay-ai
 
-# API mode
-ollama serve  # Start server at http://localhost:11434
-curl http://localhost:11434/api/generate -d '{
-  "model": "nyay-ai",
-  "prompt": "What is habeas corpus?",
-  "stream": false
-}'
-```
----
-
-## Usage Examples
-
-### Interactive Chat
-
-```bash
-$ ollama run nyay-ai
-
->>> What is the difference between bail and anticipatory bail?
-
-Bail and anticipatory bail are both legal remedies under the Code of
-Criminal Procedure (CrPC), but they serve different purposes:
-
-1. **Bail (Section 437/439 CrPC)**:
-   - Granted AFTER arrest
-   - Person is already in custody
-   - Seeks temporary release pending trial
-   ...
-
-2. **Anticipatory Bail (Section 438 CrPC)**:
-   - Granted BEFORE arrest
-   - Pre-arrest protection
-   - Seeks to avoid arrest in anticipation of accusation
-   ...
+# Single query
+ollama run nyay-ai "What is Section 498A IPC?"
 ```
 
-### Python API
-
-```python
-import requests
-
-response = requests.post('http://localhost:11434/api/generate', json={
-    'model': 'nyay-ai',
-    'prompt': 'What is Public Interest Litigation (PIL)?',
-    'stream': False
-})
-
-print(response.json()['response'])
-```
-
-### Query Types Supported
-
-✅ **Statutory Interpretation** (Best: 84.2/100)
+### Example Queries That Worked Reasonably Well
 - "What is Section 498A IPC?"
 - "Explain Article 226 of the Constitution"
-
-✅ **Fundamental Rights** (Best: 82.0/100)
 - "What are the grounds for issuing a writ of habeas corpus?"
-- "Explain the right to privacy under Article 21"
 
-✅ **Jurisdiction** (Good: 76.3/100)
-- "Can High Court quash FIR under Section 482 CrPC?"
-- "What is the jurisdiction of District Consumer Forum?"
-
-✅ **Procedural Law** (Good: 72.7/100)
-- "What is the time limit for filing a chargesheet?"
-- "How to file an appeal under CPC?"
-
-✅ **Legal Q&A** (Good: 64.3/100)
-- "What is res judicata?"
-- "Difference between bail and anticipatory bail"
-
-⚠️ **Case Application** (Limited: 6.7/100)
-- Known issue: May give very short answers
-- Being addressed in Phase 4
+### Example Queries That Didn't Work Well
+- Complex hypothetical scenarios
+- Requests to apply law to specific facts
+- Questions requiring recent legal developments
 
 ---
 
@@ -313,18 +187,9 @@ nyay-ai/
 ├── scrapers/             # Web scrapers for legal data
 ├── processors/           # Text cleaning, quality filtering
 ├── storage/              # Database models & operations
-├── scripts/              # Main execution scripts
-│   ├── train_model.py               # Phase 3: Training
-│   ├── evaluate_model.py            # Evaluation
-│   ├── convert_mlx_to_gguf.sh      # GGUF conversion
-│   └── ...
-├── docs/                 # Comprehensive documentation
-│   ├── PHASE3_TRAINING_RESULTS.md  # Training metrics
-│   ├── GGUF_EXPORT_GUIDE.md        # Deployment guide
-│   └── ...
+├── scripts/              # Training and evaluation scripts
+├── docs/                 # Documentation
 ├── models/               # Trained models (gitignored)
-│   ├── nyay-ai-checkpoints-v4/     # MLX checkpoints
-│   └── nyay-ai-gguf/               # Deployed GGUF model
 └── data/                 # Training data (gitignored)
 ```
 
@@ -332,47 +197,35 @@ nyay-ai/
 
 ## Technical Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Base Model** | Llama 3.2 3B Instruct | Foundation model |
-| **Training Framework** | MLX | Apple Silicon optimized |
-| **Fine-tuning Method** | QLoRA 8-bit | Memory-efficient training |
-| **Inference Engine** | Ollama | Local deployment |
-| **Quantization** | GGUF Q4_K_M | Model compression |
-| **Data Processing** | Python 3.11, Pandas | ETL pipeline |
-| **Quality Control** | Claude Haiku API | Training data generation |
-| **Storage** | SQLite | Metadata & progress tracking |
+| Component | Technology |
+|-----------|-----------|
+| Base Model | Llama 3.2 3B Instruct |
+| Training Framework | MLX (Apple Silicon) |
+| Fine-tuning Method | QLoRA 8-bit |
+| Inference | Ollama |
+| Quantization | GGUF Q4_K_M |
+| Training Data Generation | Claude Haiku API |
 
 ---
 
-## Roadmap (Phase 4)
+## What I Learned
 
-Current limitations and planned improvements:
+1. **Fine-tuning helps with domain vocabulary**: The model uses legal terminology more appropriately
+2. **Small models have hard limits**: 3B parameters struggle with complex reasoning
+3. **Data quality matters enormously**: LLM-generated training data has its own biases
+4. **Evaluation is hard**: Creating good benchmarks is as difficult as training
+5. **Local inference is viable**: Consumer hardware can run useful models
 
-### Known Issues
-- ❌ Case application task gives short answers (6.7/100)
-- ❌ 52% of training data truncated at 2048 tokens
-- ❌ Limited to 20 test cases
-- ❌ Hallucination risk at 45%
+---
 
-### Planned Improvements
-1. **Data Quality**
-   - Clean training data (remove exam-style patterns)
-   - Increase context length to 4096 tokens
-   - Expand to 100+ test cases
+## Possible Future Directions
 
-2. **Model Enhancements**
-   - Fix case application bug through better instruction tuning
-   - Reduce hallucination rate to <20%
-   - Improve response completeness
-
-3. **User Experience**
-   - Add response quality filters
-   - Implement citation system for judgments
-   - Create web interface
-   - Add usage analytics
-
-**Target**: Overall score >75/100 (from current 63.9/100)
+If I continue this experiment:
+- Create a proper evaluation set (100+ expert-verified test cases)
+- Clean training data to fix the case application issue
+- Increase context length to reduce truncation
+- Try a larger base model (7B+)
+- Get expert legal review of outputs
 
 ---
 
@@ -380,98 +233,51 @@ Current limitations and planned improvements:
 
 | Document | Description |
 |----------|-------------|
-| [PHASE3_TRAINING_RESULTS.md](docs/PHASE3_TRAINING_RESULTS.md) | Complete training metrics & analysis |
-| [GGUF_EXPORT_GUIDE.md](docs/GGUF_EXPORT_GUIDE.md) | Model conversion & deployment guide |
-| [PHASE3_MODEL_TRAINING.md](docs/PHASE3_MODEL_TRAINING.md) | Training configuration & process |
-| [EXTERNAL_DEPENDENCIES.md](docs/EXTERNAL_DEPENDENCIES.md) | External dependency best practices |
-| [EVALUATION_QUICKSTART.md](docs/EVALUATION_QUICKSTART.md) | Quick evaluation guide |
+| [PHASE3_TRAINING_RESULTS.md](docs/PHASE3_TRAINING_RESULTS.md) | Training metrics |
+| [GGUF_EXPORT_GUIDE.md](docs/GGUF_EXPORT_GUIDE.md) | Model conversion guide |
+| [PHASE3_MODEL_TRAINING.md](docs/PHASE3_MODEL_TRAINING.md) | Training process |
 
 ---
 
-## Limitations & Disclaimers
+## Important Disclaimers
 
-### Technical Limitations
+⚠️ **DO NOT use this for actual legal decisions.**
 
-1. **Context Length**: 2048 tokens (~1500 words)
-   - Longer judgments may be truncated
-   - Complex queries with extensive context may lose information
-
-2. **Known Bug**: Case Application Task
-   - Sometimes produces very short answers
-   - Being addressed in Phase 4
-
-3. **Hallucination Risk**: 45%
-   - May generate plausible but incorrect information
-   - Always verify critical information
-
-4. **Limited Test Coverage**: 20 test cases
-   - More comprehensive evaluation in progress
-
-### Legal Disclaimers
-
-⚠️ **IMPORTANT**: This is a research prototype, NOT a substitute for professional legal advice.
-
-- **Not Legal Advice**: Outputs should NOT be relied upon for legal decisions
-- **No Attorney-Client Privilege**: Using this tool does not create any legal relationship
-- **Verify Everything**: Always consult qualified legal professionals for actual cases
-- **Research Purpose**: Designed for preliminary research and learning only
-- **No Guarantees**: No warranty on accuracy, completeness, or fitness for purpose
-
-### Data Privacy
-
-✅ **Good News**: Your queries are 100% private
-- All processing happens locally on your machine
-- No data is sent to external servers
-- No usage logging or analytics (unless you add them)
-
----
-
-## Contributing
-
-Contributions are welcome! Areas where help is needed:
-
-1. **Data Quality**: Help identify and fix training data issues
-2. **Evaluation**: Create more comprehensive test cases
-3. **Documentation**: Improve user guides and examples
-4. **Bug Fixes**: Address known issues (especially case application)
-5. **Features**: Response filtering, citation system, web UI
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
-**Note**: This covers the code and documentation. The trained model weights are subject to the Llama 3.2 license from Meta.
+- This is an experiment, not a legal tool
+- Outputs may be incorrect, incomplete, or misleading
+- No warranty of any kind is provided
+- Always consult qualified legal professionals
+- The creator assumes no liability for any use of this project
 
 ---
 
 ## Acknowledgments
 
-- **Data Source**: [AWS Open Data - Indian High Court Judgments](https://registry.opendata.aws/indian-high-court-judgments/)
+- **Data**: [AWS Open Data - Indian High Court Judgments](https://registry.opendata.aws/indian-high-court-judgments/)
 - **Base Model**: Meta's Llama 3.2 3B via [mlx-community](https://huggingface.co/mlx-community)
-- **Framework**: Apple's [MLX](https://github.com/ml-explore/mlx) for efficient training
-- **Deployment**: [Ollama](https://ollama.ai/) for local inference
-- **Quantization**: [llama.cpp](https://github.com/ggerganov/llama.cpp) for GGUF conversion
+- **Framework**: Apple's [MLX](https://github.com/ml-explore/mlx)
+- **Inference**: [Ollama](https://ollama.ai/)
+- **Code**: ~90% written by Claude Code
 
 ---
 
-## Contact & Support
+## License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+Model weights are subject to Meta's Llama 3.2 license.
+
+---
+
+## Contact
 
 - **Issues**: [GitHub Issues](https://github.com/sameersamarthp/nyay-ai/issues)
 - **Email**: sameersamarthp@gmail.com
 
 ---
 
-
----
-
 <div align="center">
 
-**Built with ❤️ for the Indian legal community**
-
-[⭐ Star this repo](https://github.com/sameersamarthp/nyay-ai) | [🐛 Report Bug](https://github.com/sameersamarthp/nyay-ai/issues) | [💡 Request Feature](https://github.com/sameersamarthp/nyay-ai/issues)
+*An experiment in domain-specific LLM fine-tuning*
 
 </div>
