@@ -21,6 +21,7 @@ from typing import Dict, List, Tuple
 import re
 from collections import defaultdict, Counter
 import statistics
+import requests
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -66,35 +67,48 @@ class ValidationSetEvaluator:
         print()
         return examples
 
-    def query_ollama_model(self, prompt: str, timeout: int = 60) -> Dict:
-        """Query Ollama model and return response"""
+    def query_ollama_model(self, prompt: str, timeout: int = 120) -> Dict:
+        """Query Ollama model via HTTP API and return response"""
         try:
-            cmd = ["ollama", "run", self.model_name, prompt]
+            # Use Ollama HTTP API (handles long prompts better than CLI)
+            url = "http://localhost:11434/api/generate"
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "num_predict": 500,  # Max tokens to generate
+                    "temperature": 0.1,
+                }
+            }
 
-            if result.returncode == 0:
+            response = requests.post(url, json=payload, timeout=timeout)
+
+            if response.status_code == 200:
+                data = response.json()
                 return {
                     "success": True,
-                    "response": result.stdout.strip(),
+                    "response": data.get("response", "").strip(),
                     "error": None
                 }
             else:
                 return {
                     "success": False,
                     "response": None,
-                    "error": result.stderr.strip()
+                    "error": f"HTTP {response.status_code}: {response.text}"
                 }
-        except subprocess.TimeoutExpired:
+        except requests.Timeout:
             return {
                 "success": False,
                 "response": None,
                 "error": f"Timeout after {timeout}s"
+            }
+        except requests.ConnectionError:
+            return {
+                "success": False,
+                "response": None,
+                "error": "Cannot connect to Ollama. Is it running? (ollama serve)"
             }
         except Exception as e:
             return {
@@ -510,7 +524,7 @@ class ValidationSetEvaluator:
 
 **Model**: {self.model_name}
 **Evaluation Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Duration**: {overall_metrics.get('duration_minutes', 'N/A'):.1f} minutes
+**Duration**: {(self.end_time - self.start_time).total_seconds() / 60:.1f if self.start_time and self.end_time else 'N/A'} minutes
 **Total Examples**: {overall_metrics['total_examples']}
 
 ---
