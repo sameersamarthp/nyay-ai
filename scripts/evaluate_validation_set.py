@@ -519,12 +519,18 @@ class ValidationSetEvaluator:
         """Generate comprehensive markdown report"""
         report_file = Path("docs") / "AUTOMATED_EVALUATION_REPORT_810.md"
 
+        # Calculate duration
+        if self.start_time and self.end_time:
+            duration_str = f"{(self.end_time - self.start_time).total_seconds() / 60:.1f}"
+        else:
+            duration_str = "N/A"
+
         with open(report_file, 'w') as f:
             f.write(f"""# Automated Evaluation Report - 810 Validation Examples
 
 **Model**: {self.model_name}
 **Evaluation Date**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Duration**: {(self.end_time - self.start_time).total_seconds() / 60:.1f if self.start_time and self.end_time else 'N/A'} minutes
+**Duration**: {duration_str} minutes
 **Total Examples**: {overall_metrics['total_examples']}
 
 ---
