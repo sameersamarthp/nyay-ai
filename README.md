@@ -16,9 +16,9 @@ An experimental project exploring whether fine-tuning a small language model (Ll
 **The Question**: Can fine-tuning a small open-source model on real Indian court judgments help it better understand India-specific legal concepts compared to the base model?
 
 **The Approach**:
-- Collected ~58,000 High Court judgments from Delhi and Bombay courts
+- Collected ~58,000+ High Court judgments from Delhi and Bombay courts
 - Generated ~8,000 training examples using an LLM
-- Fine-tuned Llama 3.2 3B using QLoRA on Apple Silicon
+- Fine-tuned Llama 3.2 3B using QLoRA on Apple Silicon (M2)
 - Compared outputs with the base model on a small test set
 
 **What This Is**:
